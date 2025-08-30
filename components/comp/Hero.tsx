@@ -333,6 +333,7 @@ function Hero() {
                   borderColor: "black",
                   boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
                 }}
+                fontWeight={300} 
               >
                 <Box as="option" value="neutral">
                   Neutral
@@ -371,6 +372,7 @@ function Hero() {
                   borderColor: "black",
                   boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
                 }}
+                fontWeight={300} 
               >
                 <Box as="option" value="neutral">
                   Neutral
@@ -430,6 +432,7 @@ function Hero() {
                   borderColor: "black",
                   boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
                 }}
+                fontWeight={300} 
               >
                 <Box as="option" value="neutral">
                   Neutral
@@ -469,6 +472,7 @@ function Hero() {
                   borderColor: "black",
                   boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
                 }}
+fontWeight={300} 
               >
                 <Box as="option" value="insightful">
                   Insightful
