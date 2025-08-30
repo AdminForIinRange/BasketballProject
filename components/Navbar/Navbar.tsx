@@ -2,25 +2,27 @@
 
 import { useState, useRef, useCallback, memo, useEffect } from "react";
 import { Box, Text } from "@chakra-ui/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
-import BasketCallerLogo from "@/public/logo/basketcaller.png"; // Adjust the path as necessary
-import BasketCallerLogo from "@/public/logo/basketcaller.png"; // Adjust the path as necessary
+import BasketCallerLogo from "@/public/logo/basketcaller.png";
 
-
+type NavItem = {
+  name: string;
+  path: string;
+  hasDropdown?: boolean;
+  items?: { label: string; link: string; description?: string }[];
+};
 
 const Navbar = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState<string | null>(null);
-  const timeoutRef = useRef<any>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [windowWidth, setWindowWidth] = useState(0);
-
-  // Simulate active page for demo purposes
-  const activePage = `/`;
 
   // Track window width for responsive behavior
   useEffect(() => {
@@ -31,9 +33,7 @@ const Navbar = () => {
       }
     };
 
-    // Set initial width
     setWindowWidth(window.innerWidth);
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -53,7 +53,7 @@ const Navbar = () => {
         transform="translateX(-50%)"
         bg="white"
         boxShadow="0 8px 24px rgba(0, 0, 0, 0.08)"
-        border={"1px solid #F5F5F5"}
+        border="1px solid #F5F5F5"
         borderRadius="8px"
         w={{ base: "280px", md: "320px" }}
         zIndex={10}
@@ -62,9 +62,9 @@ const Navbar = () => {
         transition="all 0.25s ease-in-out"
         overflow="hidden"
         display={{ base: "none", md: "block" }}
-        onMouseEnter={() => clearTimeout(timeoutRef.current)}
+        onMouseEnter={() => timeoutRef.current && clearTimeout(timeoutRef.current)}
         onMouseLeave={() => {
-          clearTimeout(timeoutRef.current);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
           timeoutRef.current = setTimeout(() => setActiveDropdown(null), 300);
         }}
       >
@@ -77,15 +77,13 @@ const Navbar = () => {
               transition="all 0.2s ease"
               _hover={{ bg: "#F9F9F9" }}
               onClick={() => router.push(item.link)}
-              borderBottom={
-                index !== items.length - 1 ? "1px solid #F5F5F5" : "none"
-              }
+              borderBottom={index !== items.length - 1 ? "1px solid #F5F5F5" : "none"}
             >
-              <Text textStyle={"smallText"} fontWeight="500" mb="4px">
+              <Text textStyle="smallText" fontWeight="500" mb="4px">
                 {item.label}
               </Text>
               {item.description && (
-                <Text textStyle={"smallText"} color="#666" lineHeight="1.4">
+                <Text textStyle="smallText" color="#666" lineHeight="1.4">
                   {item.description}
                 </Text>
               )}
@@ -94,7 +92,7 @@ const Navbar = () => {
         </Box>
         <Box p="12px 20px" bg="#F9F9F9" borderTop="1px solid #F5F5F5">
           <Text
-            textStyle={"smallText"}
+            textStyle="smallText"
             fontWeight="500"
             color="#555"
             cursor="pointer"
@@ -139,14 +137,14 @@ const Navbar = () => {
               setMobileMenuOpen(false);
             }}
           >
-            <Text textStyle={"smallText"} fontWeight="500">
+            <Text textStyle="smallText" fontWeight="500">
               {item.label}
             </Text>
           </Box>
         ))}
         <Box py="12px" borderTop="1px solid #eee">
           <Text
-            textStyle={"smallText"}
+            textStyle="smallText"
             fontWeight="500"
             color="#555"
             cursor="pointer"
@@ -166,13 +164,13 @@ const Navbar = () => {
   MobileDropdown.displayName = "MobileDropdown";
 
   const handleEnter = useCallback((name: string) => {
-    clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setActiveDropdown(name);
     setHoveredItem(name);
   }, []);
 
   const handleLeave = useCallback(() => {
-    clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setActiveDropdown(null);
       setHoveredItem(null);
@@ -199,7 +197,7 @@ const Navbar = () => {
     setMobileDropdown((prev) => (prev === name ? null : name));
   }, []);
 
-  const navigationItems = [
+  const navigationItems: NavItem[] = [
     {
       name: "About",
       path: "/about",
@@ -227,11 +225,11 @@ const Navbar = () => {
       ]}
       backdropFilter="blur(10px)"
     >
-      {/* Top Bar with Contact Info */}
+      {/* Top Bar */}
       <Box
         w="100%"
         py="8px"
-        fontFamily={"arial"}
+        fontFamily="arial"
         backdropFilter="blur(10px)"
         borderBottom="1px solid #F0F0F0"
         display={{ base: "none", md: "block" }}
@@ -245,38 +243,17 @@ const Navbar = () => {
           px={{ base: "20px", lg: "40px" }}
         >
           <Box display="flex" alignItems="center" flexWrap="wrap">
-            <Text
-              textStyle={"smallText"}
-              color="#666"
-              mr="24px"
-              mb={{ base: "4px", sm: "0" }}
-            >
-              {/* Luxury Property Management */}
-            </Text>
-            <Text textStyle={"smallText"} color="#666">
-              {/* info@luxemanagement.com */}
-            </Text>
+            <Text textStyle="smallText" color="#666" mr="24px" mb={{ base: "4px", sm: "0" }} />
+            <Text textStyle="smallText" color="#666" />
           </Box>
           <Box display="flex" alignItems="center" flexWrap="wrap">
-            <Text
-              textStyle={"smallText"}
-              color="#666"
-              mr="24px"
-              mb={{ base: "4px", sm: "0" }}
-            >
-              {/* +61 406 631 461 */}
-            </Text>
+            <Text textStyle="smallText" color="#666" mr="24px" mb={{ base: "4px", sm: "0" }} />
           </Box>
         </Box>
       </Box>
 
       {/* Main Navigation */}
-      <Box
-        w="100%"
-        py="10px"
-        borderBottom="1px solid #F0F0F0"
-        transition="all 0.3s ease"
-      >
+      <Box w="100%" py="10px" borderBottom="1px solid #F0F0F0" transition="all 0.3s ease">
         <Box
           display="flex"
           justifyContent="space-between"
@@ -285,7 +262,7 @@ const Navbar = () => {
           mx="auto"
           px={{ base: "20px", lg: "40px" }}
         >
-          {/* Logo Section */}
+          {/* Logo */}
           <Box
             display="flex"
             alignItems="center"
@@ -296,20 +273,22 @@ const Navbar = () => {
             <Box
               w={{ base: "50px", md: "66px" }}
               h={{ base: "50px", md: "66px" }}
-              mr="0px"
+              mr="12px"
               position="relative"
-              overflow="hidden"
             >
-              {/* <Image
-                quality={70}
-                src={luxeLogo}
-                alt="Luxe Managements Logo"
-                  title="Luxe Managements Logo"
-              /> */}
+              <Image
+                src={BasketCallerLogo}
+                alt="BasketCaller Logo"
+                title="BasketCaller Logo"
+                fill
+                sizes="66px"
+                style={{ objectFit: "contain" }}
+                priority
+              />
             </Box>
             <Box>
               <Text
-                textStyle={"basicText"}
+                textStyle="basicText"
                 fontWeight="600"
                 letterSpacing="0.2px"
                 fontFamily="arial"
@@ -318,39 +297,21 @@ const Navbar = () => {
               >
                 BasketCaller
               </Text>
-
-              <Image
-                src="@/"
-                alt="BasketCaller Logo"
-                title="BasketCaller Logo"
-                width={100}
-                height={30}
-                style={{ marginTop: "4px" }}
-              />
-            </Box>
-          </Box>
             </Box>
           </Box>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Toggle */}
           <Box
             display={{ base: "block", md: "block", lg: "none" }}
             cursor="pointer"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? (
-              <X size={24} color="#222" />
-            ) : (
-              <Menu size={24} color="#222" />
-            )}
+            {mobileMenuOpen ? <X size={24} color="#222" /> : <Menu size={24} color="#222" />}
           </Box>
 
-          {/* Desktop Navigation Items */}
-          <Box
-            display={{ base: "none", md: "none", lg: "flex" }}
-            alignItems="center"
-            justifyContent="flex-end"
-          >
+          {/* Desktop Nav */}
+          <Box display={{ base: "none", md: "none", lg: "flex" }} alignItems="center" justifyContent="flex-end">
             {navigationItems.map((item) => (
               <Box
                 key={item.name}
@@ -373,12 +334,12 @@ const Navbar = () => {
                   role="group"
                 >
                   <Text
-                    textStyle={"smallText"}
-                    fontWeight={activePage === item.path ? "600" : "500"}
+                    textStyle="smallText"
+                    fontWeight={pathname === item.path ? "600" : "500"}
                     fontFamily="arial"
                     transition="all 0.2s ease"
                     color={
-                      activePage === item.path
+                      pathname === item.path
                         ? "#000000"
                         : hoveredItem === item.name.toLowerCase()
                         ? "#000000"
@@ -394,57 +355,51 @@ const Navbar = () => {
                     bottom="0"
                     left="0"
                     width={
-                      activePage === item.path
+                      pathname === item.path
                         ? "100%"
                         : hoveredItem === item.name.toLowerCase()
                         ? "70%"
                         : "0%"
                     }
                     height="2px"
-                    bg={activePage === item.path ? "#000000" : "#555555"}
+                    bg={pathname === item.path ? "#000000" : "#555555"}
                     transition="all 0.3s ease"
                   />
                 </Box>
+
                 {item.hasDropdown && (
-                  <Box
-                    position="absolute"
-                    top="100%"
-                    left="50%"
-                    transform="translateX(-50%)"
-                    width="16px"
-                    height="16px"
-                    pointerEvents="none"
-                    opacity={activeDropdown === item.name.toLowerCase() ? 1 : 0}
-                    visibility={
-                      activeDropdown === item.name.toLowerCase()
-                        ? "visible"
-                        : "hidden"
-                    }
-                    transition="all 0.25s ease-in-out"
-                    zIndex="101"
-                  >
+                  <>
                     <Box
                       position="absolute"
-                      top="8px"
-                      left="0"
+                      top="100%"
+                      left="50%"
+                      transform="translateX(-50%)"
                       width="16px"
                       height="16px"
-                      bg="white"
-                      transform="rotate(45deg)"
-                      boxShadow="0 0 10px rgba(0, 0, 0, 0.05)"
-                    />
-                  </Box>
-                )}
-                {item.hasDropdown && (
-                  <Dropdown
-                    items={item.items || []}
-                    category={item.name.toLowerCase()}
-                  />
+                      pointerEvents="none"
+                      opacity={activeDropdown === item.name.toLowerCase() ? 1 : 0}
+                      visibility={activeDropdown === item.name.toLowerCase() ? "visible" : "hidden"}
+                      transition="all 0.25s ease-in-out"
+                      zIndex="101"
+                    >
+                      <Box
+                        position="absolute"
+                        top="8px"
+                        left="0"
+                        width="16px"
+                        height="16px"
+                        bg="white"
+                        transform="rotate(45deg)"
+                        boxShadow="0 0 10px rgba(0, 0, 0, 0.05)"
+                      />
+                    </Box>
+                    <Dropdown items={item.items || []} category={item.name.toLowerCase()} />
+                  </>
                 )}
               </Box>
             ))}
 
-            {/* Desktop Call to Action Button */}
+            {/* Desktop CTA */}
             <Box
               ml={{ md: "16px", lg: "24px" }}
               bg="#0A0F29"
@@ -457,11 +412,7 @@ const Navbar = () => {
               _hover={{ bg: "#000" }}
               onClick={() => handleNavigate("/contact")}
             >
-              <Text
-                textStyle={"smallText"}
-                fontWeight="500"
-                whiteSpace="nowrap"
-              >
+              <Text textStyle="smallText" fontWeight="500" whiteSpace="nowrap">
                 Get Started
               </Text>
             </Box>
@@ -472,7 +423,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       <Box
         position="fixed"
-        top={{ base: "70px", md: "100px", lg: "none" }} // Height of the navbar
+        top={{ base: "70px", md: "100px", lg: "none" }}
         left="0"
         right="0"
         bottom="0"
@@ -504,22 +455,18 @@ const Navbar = () => {
                 }}
               >
                 <Text
-                  textStyle={"smallText"}
-                  fontWeight={activePage === item.path ? "600" : "500"}
-                  color={activePage === item.path ? "#000" : "#444"}
+                  textStyle="smallText"
+                  fontWeight={pathname === item.path ? "600" : "500"}
+                  color={pathname === item.path ? "#000" : "#444"}
                 >
                   {item.name}
                 </Text>
                 {item.hasDropdown && (
                   <Box
-                    transform={
-                      mobileDropdown === item.name.toLowerCase()
-                        ? "rotate(180deg)"
-                        : "rotate(0)"
-                    }
+                    transform={mobileDropdown === item.name.toLowerCase() ? "rotate(180deg)" : "rotate(0)"}
                     transition="transform 0.3s ease"
                   >
-                    <Text textStyle={"smallText"}>↓</Text>
+                    <Text textStyle="smallText">↓</Text>
                   </Box>
                 )}
               </Box>
@@ -533,7 +480,7 @@ const Navbar = () => {
             </Box>
           ))}
 
-          {/* Mobile Call to Action Button */}
+          {/* Mobile CTA */}
           <Box
             mt="24px"
             bg="#0A0F29"
@@ -546,21 +493,17 @@ const Navbar = () => {
             onClick={() => handleNavigate("/contact")}
             textAlign="center"
           >
-            <Text textStyle={"smallText"} fontWeight="500">
+            <Text textStyle="smallText" fontWeight="500">
               Get a Quote
             </Text>
           </Box>
 
           {/* Mobile Contact Info */}
           <Box mt="32px" pt="20px" borderTop="1px solid #eee">
-            <Text textStyle={"smallText"} color="#666" mb="12px">
-              {/* info@luxemanagement.com */}
-            </Text>
-            <Text textStyle={"smallText"} color="#666" mb="12px">
-              {/* +61 406 631 461 */}
-            </Text>
+            <Text textStyle="smallText" color="#666" mb="12px" />
+            <Text textStyle="smallText" color="#666" mb="12px" />
             <Text
-              textStyle={"smallText"}
+              textStyle="smallText"
               fontWeight="500"
               color="#333"
               cursor="pointer"
