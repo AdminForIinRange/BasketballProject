@@ -199,18 +199,18 @@ const Navbar = () => {
   }, []);
 
   const navigationItems: NavItem[] = [
-    {
-      name: "About",
-      path: "/about",
-      hasDropdown: true,
-      items: [
-        {
-          label: "Our Story",
-          link: "/about/#story",
-          description: "Learn about our journey and values",
-        },
-      ],
-    },
+    // {
+    //   name: "About",
+    //   path: "/about",
+    //   hasDropdown: true,
+    //   items: [
+    //     {
+    //       label: "Our Story",
+    //       link: "/about/#story",
+    //       description: "Learn about our journey and values",
+    //     },
+    //   ],
+    // },
   ];
 
   return (
@@ -248,28 +248,11 @@ const Navbar = () => {
             onClick={() => handleNavigate("/")}
             position="relative"
           >
-            <Box
-              w={{ base: "50px", md: "66px" }}
-              h={{ base: "50px", md: "66px" }}
-              mr="12px"
-              position="relative"
-            >
-              
-              <Image
-                src={BasketCallerLogo}
-                alt="BasketCaller Logo"
-                title="BasketCaller Logo"
-                fill
-                sizes="66px"
-                style={{ objectFit: "contain" }}
-                priority
-              />
-                
-              
-            </Box>
+            
             <Box>
               <Text
-                textStyle="basicText"
+              textIndent={"10px"}
+        fontSize={"24px"}
                 fontWeight="600"
                 letterSpacing="0.2px"
                 fontFamily="arial"
@@ -381,22 +364,7 @@ const Navbar = () => {
             ))}
 
             {/* Desktop CTA */}
-            <Box
-              ml={{ md: "16px", lg: "24px" }}
-              bg="#0A0F29"
-              color="white"
-              px={{ md: "16px", lg: "20px" }}
-              py="10px"
-              borderRadius="4px"
-              cursor="pointer"
-              transition="all 0.2s ease"
-              _hover={{ bg: "#000" }}
-              onClick={() => handleNavigate("/contact")}
-            >
-              <Text textStyle="smallText" fontWeight="500" whiteSpace="nowrap">
-                Get Started
-              </Text>
-            </Box>
+           
           </Box>
         </Box>
       </Box>

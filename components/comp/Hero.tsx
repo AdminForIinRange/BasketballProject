@@ -1,29 +1,25 @@
 "use client";
-import {
-  Box,
-  VStack,
-  Text,
-  HStack,
-  Span,
-} from "@chakra-ui/react";
+import { Box, VStack, Text, HStack, Span } from "@chakra-ui/react";
 import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
+import TranscriptPanel from "./TranscriptModal";
+import TranscriptJsonPanel from "./TranscriptJsonPanel";
 
 type TranscriptItem = {
-  time?: string;   // optional "HH:MM:SS.mmm"
+  time?: string; // optional "HH:MM:SS.mmm"
   speaker?: string;
   text: string;
 };
 
 async function speakOnce(text: string) {
-  const res = await fetch('/api/elevenlabs', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/elevenlabs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
   });
 
-  const ct = res.headers.get('content-type') || '';
-  if (!res.ok || !ct.startsWith('audio/')) {
+  const ct = res.headers.get("content-type") || "";
+  if (!res.ok || !ct.startsWith("audio/")) {
     throw new Error(await res.text());
   }
 
@@ -46,17 +42,17 @@ function parseTranscriptJSON(raw: string): TranscriptItem[] {
   if (!Array.isArray(data)) throw new Error("JSON must be an array.");
   const items: TranscriptItem[] = [];
   for (const [idx, row] of data.entries()) {
-    if (!row || typeof row !== 'object') {
+    if (!row || typeof row !== "object") {
       throw new Error(`Item ${idx + 1} is not an object.`);
     }
     const text = row.text;
-    if (typeof text !== 'string' || !text.trim()) {
+    if (typeof text !== "string" || !text.trim()) {
       throw new Error(`Item ${idx + 1} missing non-empty "text".`);
     }
     items.push({
       text: text.trim(),
-      time: typeof row.time === 'string' ? row.time : undefined,
-      speaker: typeof row.speaker === 'string' ? row.speaker : undefined,
+      time: typeof row.time === "string" ? row.time : undefined,
+      speaker: typeof row.speaker === "string" ? row.speaker : undefined,
     });
   }
   return items;
@@ -89,19 +85,90 @@ function Hero() {
     }
   };
 
+  const sample: TranscriptItem[] = [
+    {
+      time: "00:00:03.250",
+      speaker: "PlayByPlay",
+      text: "And we’re underway, tip-off goes to the Tigers.",
+    },
+    {
+      time: "00:00:07.900",
+      speaker: "Color",
+      text: "Okafor really climbed the ladder for that one.",
+    },
+    {
+      time: "00:00:10.800",
+      speaker: "PlayByPlay",
+      text: "Johnson brings it across midcourt, looking to set things up.",
+    },
+    {
+      time: "00:00:13.300",
+      speaker: "PlayByPlay",
+      text: "He finds Okafor near the elbow.",
+    },
+    {
+      time: "00:00:14.200",
+      speaker: "Color",
+      text: "This is where he loves to operate, he’s so tough to guard there.",
+    },
+    {
+      time: "00:00:16.000",
+      speaker: "PlayByPlay",
+      text: "Okafor drives right, defender stays with him.",
+    },
+    {
+      time: "00:00:19.200",
+      speaker: "PlayByPlay",
+      text: "Floater in the lane… and it drops!",
+    },
+    {
+      time: "00:00:21.000",
+      speaker: "Color",
+      text: "Soft touch—he makes that look easy.",
+    },
+    {
+      time: "00:00:23.300",
+      speaker: "PlayByPlay",
+      text: "Tigers get a stop on the other end, pushing quickly.",
+    },
+    {
+      time: "00:00:25.200",
+      speaker: "PlayByPlay",
+      text: "Johnson leading the break, dishes back to Okafor.",
+    },
+    {
+      time: "00:00:27.100",
+      speaker: "Color",
+      text: "Great decision—kept the defense on its heels.",
+    },
+    {
+      time: "00:00:29.400",
+      speaker: "PlayByPlay",
+      text: "Okafor spins to the left hand, rises for the jumper…",
+    },
+    {
+      time: "00:00:36.300",
+      speaker: "PlayByPlay",
+      text: "And it’s good! Tigers extend their lead.",
+    },
+    {
+      time: "00:00:38.100",
+      speaker: "Color",
+      text: "That’s six quick points from Okafor—what a start.",
+    },
+  ];
+
   return (
     <>
-  
-
       <HStack
         px={["4%", "4%", "6%", "6%", "6%", "16%"]}
         mt="10px"
         mb="50px"
         justifyContent="center"
         alignItems="start"
-              h={"100%"}
+        h={"100%"}
         spacing={["16px", "16px", "20px", "24px", "24px", "32px"]}
-        flexWrap={[ "wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]} 
+        flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
         gap={["16px", "16px", "20px", "50px", "50px", "50px"]}
       >
         {/* Left: JSON input panel */}
@@ -127,22 +194,19 @@ function Hero() {
               w="100%"
               justify="space-between"
               align="center"
-             
               py="10px"
-              borderBottomWidth="1px"
-              borderColor="gray.300"
               bg="white"
             >
               <Text
                 fontFamily="poppins"
                 fontWeight={600}
                 color="black"
-                fontSize="14px"
+                fontSize="20px"
               >
-                Play Data · timestamps supported
+                Game Data
               </Text>
 
-                <Box
+              {/* <Box
                     fontFamily="poppins"
             
                 color="black"
@@ -172,17 +236,11 @@ function Hero() {
                   Other
                 </Box>
               </Box>
-              
-              <Text fontFamily="poppins" color="gray.600" fontSize="12px">
-                Example keys:{" "}
-                <Span as="span" color="black">
-                  time, speaker, text
-                </Span>
-              </Text>
+               */}
             </HStack>
 
             {/* Editor */}
-            <Box py={"10px"}  h={"500px"}>
+            <Box py={"10px"} h={"500px"}>
               <Box
                 as="textarea"
                 ref={textareaRef}
@@ -205,11 +263,9 @@ function Hero() {
                 fontFamily="mono"
                 fontSize="13px"
                 lineHeight="1.6"
-                bg="white"
+                bg="black"
                 color="black"
-               
                 border={" 1px solid #ccc"}
-             
                 borderRadius="12px"
                 p="12px"
                 h="100%"
@@ -229,86 +285,30 @@ function Hero() {
 
         {/* Right: configuration & actions (trimmed for brevity) */}
 
-
-            {/* Right: configuration & actions (unchanged from your improved version) */}
+        {/* Right: configuration & actions (unchanged from your improved version) */}
         <VStack
-   
-   
           justify="space-between"
           align="stretch"
           position="relative"
           h={"100%"}
           w={["100%%", "100%%", "100%%", "100%", "100%", "100%"]}
-          
         >
           {/* Play-by-Play */}
-          <Box
-          
-            position="relative"
-            borderRadius="24px"
-            
-            overflow="hidden"
-            py="20px"
-          >
+          <Box>
             <Text
               py="8px"
-              fontSize={["20px", "24px", "24px"]}
+              fontSize={["20PX", "20PX", "20PX"]}
               fontWeight={700}
               fontFamily="poppins"
               lineHeight="1.1"
               color="black"
             >
-              Play-by-Play Commentator
+              Choose Play Commentator
             </Text>
 
-            <HStack gap="10px" mt="10px" flexWrap="wrap">
-              <Box
-               cursor={"pointer"}
-                as="button"
-                contentEditable
-                suppressContentEditableWarning
-                role="textbox"
-                aria-label="Play-by-play character name"
-                borderWidth="1px"
-                borderColor="gray.300"
-                borderRadius="40px"
-                p="8px"
-                px="12px"
-                bg="white"
-                fontFamily="poppins"
-                color="black"
-                _focus={{
-                  outline: "none",
-                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
-                }}
-              >
-                Character 1
-              </Box>
-              <Box
-               cursor={"pointer"}
-                as="button"
-                contentEditable
-                suppressContentEditableWarning
-                role="textbox"
-                aria-label="Play-by-play character name"
-                borderWidth="1px"
-                borderColor="gray.300"
-                borderRadius="40px"
-                p="8px"
-                px="12px"
-                bg="white"
-                fontFamily="poppins"
-                color="black"
-                _focus={{
-                  outline: "none",
-                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
-                }}
-              >
-                Character 2
-              </Box>
-            </HStack>
+            <HStack gap="10px" mt="10px" flexWrap="wrap"></HStack>
 
-            <Box
+            <VStack
               mt="14px"
               as="label"
               display="block"
@@ -317,11 +317,12 @@ function Hero() {
               fontWeight={600}
               fontSize="14px"
             >
-              Voice
+              <Box>Character</Box>
+
               <Box
                 as="select"
                 mt="6px"
-                w="100%"
+                w="300px"
                 borderWidth="1px"
                 borderColor="gray.300"
                 borderRadius="12px"
@@ -343,78 +344,9 @@ function Hero() {
                   Calm
                 </Box>
               </Box>
-            </Box>
-          </Box>
+            </VStack>
 
-          {/* Color Commentary */}
-          <Box
-            position="relative"
-            borderRadius="24px"
-            
-            overflow="hidden"
-            py="20px"
-          >
-            <Text
-              py="8px"
-              fontSize={["20px", "24px", "24px"]}
-              fontWeight={700}
-              fontFamily="poppins"
-              lineHeight="1.1"
-              color="black"
-            >
-              Choose Color Commentator
-            </Text>
-
-            <HStack gap="10px" mt="10px" flexWrap="wrap">
-              <Box
-              cursor={"pointer"}
-                as="button"
-                contentEditable
-                suppressContentEditableWarning
-                role="textbox"
-                aria-label="Color commentator name"
-                borderWidth="1px"
-                borderColor="gray.300"
-                borderRadius="40px"
-                p="8px"
-                px="12px"
-                bg="white"
-                fontFamily="poppins"
-                color="black"
-                _focus={{
-                  outline: "none",
-                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
-                }}
-                
-
-              >
-                Analyst
-              </Box>
-              <Box
-                   cursor={"pointer"}
-             as="button"
-                contentEditable
-                suppressContentEditableWarning
-                role="textbox"
-                aria-label="Color commentator name"
-                borderWidth="1px"
-                borderColor="gray.300"
-                borderRadius="40px"
-                p="8px"
-                px="12px"
-                bg="white"
-                fontFamily="poppins"
-                color="black"
-                _focus={{
-                  outline: "none",
-                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
-                }}
-              >
-                Sideline
-              </Box>
-            </HStack>
-
-            <Box
+            <VStack
               mt="14px"
               as="label"
               display="block"
@@ -423,11 +355,110 @@ function Hero() {
               fontWeight={600}
               fontSize="14px"
             >
-              Tone
+              <Box>Voice</Box>
+
               <Box
                 as="select"
                 mt="6px"
-                w="100%"
+              w="300px"
+                borderWidth="1px"
+                borderColor="gray.300"
+                borderRadius="12px"
+                p="10px"
+                bg="white"
+                color="black"
+                _focus={{
+                  borderColor: "black",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
+              >
+                <Box as="option" value="neutral">
+                  Neutral
+                </Box>
+                <Box as="option" value="energetic">
+                  Energetic
+                </Box>
+                <Box as="option" value="calm">
+                  Calm
+                </Box>
+              </Box>
+            </VStack>
+          </Box>
+
+          {/* Color Commentary */}
+          <Box
+            position="relative"
+            borderRadius="24px"
+            overflow="hidden"
+            py="20px"
+          >
+            <Text
+              py="8px"
+              fontSize={["20px", "20px", "20px"]}
+              fontWeight={700}
+              fontFamily="poppins"
+              lineHeight="1.1"
+              color="black"
+            >
+              Choose Color Commentator
+            </Text>
+
+            
+
+ <VStack
+              mt="14px"
+              as="label"
+              display="block"
+              textAlign="left"
+              color="black"
+              fontWeight={600}
+              fontSize="14px"
+            >
+              <Box>Character</Box>
+
+              <Box
+                as="select"
+                mt="6px"
+                w="300px"
+                borderWidth="1px"
+                borderColor="gray.300"
+                borderRadius="12px"
+                p="10px"
+                bg="white"
+                color="black"
+                _focus={{
+                  borderColor: "black",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
+              >
+                <Box as="option" value="neutral">
+                  Neutral
+                </Box>
+                <Box as="option" value="energetic">
+                  Energetic
+                </Box>
+                <Box as="option" value="calm">
+                  Calm
+                </Box>
+              </Box>
+            </VStack>
+
+
+            <VStack
+              mt="14px"
+              as="label"
+              display="block"
+              textAlign="left"
+              color="black"
+              fontWeight={600}
+              fontSize="14px"
+            >
+              <Box>Voice</Box>
+
+              <Box
+                as="select"
+                mt="6px"
+                w="300px"
                 borderWidth="1px"
                 borderColor="gray.300"
                 borderRadius="12px"
@@ -449,12 +480,12 @@ function Hero() {
                   Dramatic
                 </Box>
               </Box>
-            </Box>
+            </VStack>
           </Box>
 
           {/* Generate */}
-               <Box
-
+          <Box
+            w={"300px"}
             as="button"
             borderRadius="16px"
             bg="orange.400"
@@ -467,27 +498,41 @@ function Hero() {
             fontFamily="poppins"
             fontWeight={700}
             onMouseDown={(e) => {
-              (e.currentTarget as HTMLDivElement).style.transform = "translateY(1px)";
+              (e.currentTarget as HTMLDivElement).style.transform =
+                "translateY(1px)";
             }}
             onMouseUp={(e) => {
-              (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+              (e.currentTarget as HTMLDivElement).style.transform =
+                "translateY(0)";
             }}
             onClick={handleGenerate}
             disabled={speaking}
           >
             <HStack gap="10px" justify="center">
-              <Text fontSize={["18px", "18px", "20px"]} lineHeight="1.1" color="white">
+              <Text
+                fontSize={["18px", "18px", "20px"]}
+                lineHeight="1.1"
+                color="white"
+              >
                 {speaking ? "Speaking…" : "Generate"}
               </Text>
             </HStack>
           </Box>
-   
         </VStack>
       </HStack>
 
-      <VStack w={["100%", "100%", "100%", "100%", "100%", "100%"]}  px={["4%", "4%", "6%", "6%", "6%", "16%"]}>
-        <HStack justify={"center"} align="start" w="100%" flexWrap={[ "wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]} >
+      <VStack
+        w={["100%", "100%", "100%", "100%", "100%", "100%"]}
+        px={["4%", "4%", "6%", "6%", "6%", "16%"]}
+      >
+        <HStack
+          justify={"center"}
+          align="start"
+          w="100%"
+          flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
+        >
           <Box
+            mb={"50px"}
             spellCheck={false}
             wrap="off"
             resize="none"
@@ -613,66 +658,24 @@ function Hero() {
           </Box>
         </HStack>
 
-
-         <HStack justify={"center"} align="center" w={["100%", "100%", "100%", "1000px", "1000px", "100%"]}   flexWrap={[ "wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}   >
-          <Box
-            spellCheck={false}
-            wrap="off"
-            resize="none"
-            fontSize="13px"
-            lineHeight="1.6"
-            bg="white"
-            color="black"
-            borderWidth="1px"
-            borderColor="gray.300"
-            borderRadius="12px"
-            p="12px"
-           h="500px"
-            w="100%"
-            boxShadow="md"
-                 fontWeight={500}
-                   fontFamily={"poppins"}
+        <VStack w="full" spacing={6}>
+          <HStack
+            justify="center"
+            align="stretch"
+            w={["100%", "100%", "100%", "1000px", "1000px", "100%"]}
+            flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
+            spacing={4}
           >
-        Transript
-               <Box mt="20px" textAlign="start"> 
-HI
-          </Box>
-          </Box>
-                 <Box
-            spellCheck={false}
-            wrap="off"
-            resize="none"
-            fontSize="13px"
-            lineHeight="1.6"
-            bg="white"
-            color="black"
-            borderWidth="1px"
-            borderColor="gray.300"
-            borderRadius="12px"
-            p="12px"
-            h="500px"
-            w="100%"
-            boxShadow="md"
-            fontWeight={500}
-            fontFamily={"poppins"}
-          >  Transript
-
-
-             <Box mt="20px" textAlign="start"> 
-Hi
-          </Box>
-          </Box>
-          
-       
+            <TranscriptJsonPanel title="Transcript A" lines={sample} h={500} />
+            <TranscriptPanel title="Transcript B" lines={sample} h={500} />
           </HStack>
+        </VStack>
       </VStack>
 
+      {/* … your existing character/tone UI … */}
 
-          {/* … your existing character/tone UI … */}
+      {/* Generate */}
 
-          {/* Generate */}
-    
-   
       {/* … the rest of your player UI untouched … */}
     </>
   );
