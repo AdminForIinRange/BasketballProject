@@ -23,18 +23,20 @@ function Hero() {
         </Text>
 
         <Text
-          fontSize={["32px", "40px", "48px"]}
+          fontSize={["32px", "40px", "40px"]}
           fontWeight={700}
           fontFamily="poppins"
           lineHeight="1.1"
           color="black"
-          px={["5%", "5%", "0", "10%", "10%", "10%"]}
+          px={["5%", "5%", "0", "10%", "10%", "20%"]}
           mt="6px"
         >
           Generate quality audio for basketball commentary
         </Text>
 
         <Box
+        mb={["20px", "20px", "25px", "30px", "30px", "40px"]}
+
           my="25px"
           w={["100%", "100%", "100%", "640px", "640px", "640px"]}
           borderWidth="1px"
