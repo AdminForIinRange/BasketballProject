@@ -51,14 +51,12 @@ function Hero() {
         w="100%"
         spacing={["16px", "16px", "20px", "24px", "24px", "32px"]}
       >
-        {/* Left: input panel */}
+        {/* Left: JSON input panel */}
         <Box
           position="relative"
           h={["340px", "360px", "380px", "500px", "520px", "560px"]}
           w={["95%", "95%", "95%", "600px", "600px", "600px"]}
           borderRadius="24px"
-          bgPos="center"
-          bgSize="cover"
           overflow="hidden"
           display="flex"
           justifyContent="end"
@@ -70,40 +68,85 @@ function Hero() {
             borderRadius="24px"
             bg="gray.100"
             overflow="hidden"
-            p="20px"
           >
-            <Text
-              fontFamily="poppins"
-              textAlign="start"
-              fontWeight={600}
-              color="black"
-            >
-              Commentary Script
-            </Text>
-
-            <Box
-              as="textarea"
-              placeholder="Type your basketball commentary here…"
-              resize="none"
-              _placeholder={{ color: "gray.500" }}
-              flex="1"
-              fontSize="14px"
-              outline="none"
-              mt="10px"
-              h="calc(100% - 44px)"
+            {/* Header strip */}
+            <HStack
+              as="header"
               w="100%"
-              bg="white"
-              color="black"
-              borderWidth="1px"
+              justify="space-between"
+              align="center"
+              px="16px"
+              py="10px"
+              borderBottomWidth="1px"
               borderColor="gray.300"
-              borderRadius="12px"
-              p="12px"
-              _focus={{ borderColor: "black", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)" }}
-            />
+              bg="white"
+            >
+              <Text
+                fontFamily="poppins"
+                fontWeight={600}
+                color="black"
+                fontSize="14px"
+              >
+                JSON mode · timestamps supported
+              </Text>
+              <Text
+                fontFamily="poppins"
+                color="gray.600"
+                fontSize="12px"
+              >
+                Example keys: <Span as="span" color="black">time, speaker, text</Span>
+              </Text>
+            </HStack>
+
+            {/* Editor */}
+            <Box p="16px" h="calc(100% - 46px)">
+              <Box
+                as="textarea"
+                aria-label="Paste JSON with timestamps"
+                placeholder={`[
+  {
+    "time": "00:00:03.250",
+    "speaker": "PlayByPlay",
+    "text": "Tip-off won by the Tigers."
+  },
+  {
+    "time": "00:00:07.900",
+    "speaker": "Color",
+    "text": "Great vertical from Okafor there."
+  }
+]`}
+                spellCheck={false}
+                wrap="off"
+                resize="none"
+                fontFamily="mono"
+                fontSize="13px"
+                lineHeight="1.6"
+                bg="white"
+                color="black"
+                borderWidth="1px"
+                borderColor="gray.300"
+                borderRadius="12px"
+                p="12px"
+                h="100%"
+                w="100%"
+                overflow="auto"
+                sx={{
+                  caretColor: "black",
+                  tabSize: 2,
+                  whiteSpace: "pre",
+                }}
+                _placeholder={{ color: "gray.500" }}
+                _focus={{
+                  borderColor: "black",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                  outline: "none",
+                }}
+              />
+            </Box>
           </Box>
         </Box>
 
-        {/* Right: configuration & actions */}
+        {/* Right: configuration & actions (unchanged from your improved version) */}
         <VStack
           justify="start"
           align="stretch"
@@ -112,7 +155,7 @@ function Hero() {
           w={["95%", "95%", "95%", "600px", "600px", "600px"]}
           spacing="16px"
         >
-          {/* Play-by-play */}
+          {/* Play-by-Play */}
           <Box
             position="relative"
             borderRadius="24px"
@@ -131,13 +174,7 @@ function Hero() {
               Play-by-Play Commentary
             </Text>
 
-            <HStack
-              gap="10px"
-              px="0"
-              mt="10px"
-              flexWrap="wrap"
-            >
-              {/* Editable character chips (rename in place) */}
+            <HStack gap="10px" mt="10px" flexWrap="wrap">
               <Box
                 as="span"
                 contentEditable
@@ -156,7 +193,6 @@ function Hero() {
               >
                 Character 1
               </Box>
-
               <Box
                 as="span"
                 contentEditable
@@ -177,7 +213,6 @@ function Hero() {
               </Box>
             </HStack>
 
-            {/* Voice select (native) */}
             <Box
               mt="14px"
               as="label"
@@ -207,7 +242,7 @@ function Hero() {
             </Box>
           </Box>
 
-          {/* Color commentary */}
+          {/* Color Commentary */}
           <Box
             position="relative"
             borderRadius="24px"
@@ -226,12 +261,7 @@ function Hero() {
               Choose Color Commentary
             </Text>
 
-            <HStack
-              gap="10px"
-              px="0"
-              mt="10px"
-              flexWrap="wrap"
-            >
+            <HStack gap="10px" mt="10px" flexWrap="wrap">
               <Box
                 as="span"
                 contentEditable
@@ -299,7 +329,7 @@ function Hero() {
             </Box>
           </Box>
 
-          {/* Generate button */}
+          {/* Generate */}
           <Box
             as="button"
             borderRadius="16px"
@@ -315,14 +345,8 @@ function Hero() {
             onMouseDown={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(1px)"; }}
             onMouseUp={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
           >
-            <HStack gap="10px" p="0" justify="center">
-              <Text
-                fontSize={["18px", "18px", "20px"]}
-                textAlign="center"
-                w="100%"
-                lineHeight="1.1"
-                color="white"
-              >
+            <HStack gap="10px" justify="center">
+              <Text fontSize={["18px", "18px", "20px"]} lineHeight="1.1" color="white">
                 Generate
               </Text>
             </HStack>
