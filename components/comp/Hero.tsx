@@ -21,35 +21,9 @@ function Hero() {
         textAlign="center"
         px={["4%", "4%", "6%", "6%", "6%", "10%"]}
       >
-        <Text
-          fontSize={["16px", "18px", "18px"]}
-          fontFamily="poppins"
-          fontWeight={500}
-          lineHeight="1.6"
-          color="black"
-        >
-          Efficient, time- and cost-effective text-to-speech solutions
-        </Text>
 
-        <Text
-          fontSize={["32px", "40px", "40px"]}
-          fontWeight={700}
-          fontFamily="poppins"
-          lineHeight="1.1"
-          color="black"
-          px={["5%", "5%", "0", "10%", "10%", "20%"]}
-          mt="6px"
-        >
-          Generate quality audio for basketball commentor
-        </Text>
 
-        <Box
-          mb={["20px", "20px", "25px", "30px", "30px", "40px"]}
-          my="25px"
-          w={["100%", "100%", "100%", "640px", "640px", "640px"]}
-          borderWidth="1px"
-          borderColor="gray.300"
-        />
+     
       </VStack>
 
       <HStack
@@ -78,7 +52,7 @@ function Hero() {
             h="100%"
             w="100%"
             borderRadius="24px"
-            bg="gray.200"
+            
             overflow="hidden"
           >
             {/* Header strip */}
@@ -170,7 +144,7 @@ function Hero() {
           <Box
             position="relative"
             borderRadius="24px"
-            bg="gray.200"
+            
             overflow="hidden"
             p="20px"
           >
@@ -274,7 +248,7 @@ function Hero() {
           <Box
             position="relative"
             borderRadius="24px"
-            bg="gray.200"
+            
             overflow="hidden"
             p="20px"
           >

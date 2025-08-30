@@ -1,15 +1,13 @@
-import Hero from '@/components/comp/Hero'
-import React from 'react'
+// app/page.tsx
+import React from 'react';
+import Hero from '@/components/comp/Hero';
+import TTSDemo from '@/components/comp/TTSDemo';
 
-function page() {
+export default function Page() {
   return (
     <>
-      
-
-<Hero />
-
+      <Hero />
+      <TTSDemo />
     </>
-  )
+  );
 }
-
-export default page
