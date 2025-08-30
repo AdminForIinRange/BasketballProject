@@ -91,22 +91,15 @@ function Hero() {
 
   return (
     <>
-      <VStack
-        mt="25px"
-        justify="center"
-        align="center"
-        w="100%"
-        textAlign="center"
-        px={["4%", "4%", "6%", "6%", "6%", "10%"]}
-      />
+  
 
       <HStack
-        px={["4%", "4%", "6%", "6%", "6%", "10%"]}
+        px={["4%", "4%", "6%", "6%", "6%", "16%"]}
         mt="10px"
         mb="50px"
         justifyContent="center"
         alignItems="start"
-        w="100%"
+              h={"100%"}
         spacing={["16px", "16px", "20px", "24px", "24px", "32px"]}
         flexWrap={[ "wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]} 
         gap={["16px", "16px", "20px", "50px", "50px", "50px"]}
@@ -134,7 +127,7 @@ function Hero() {
               w="100%"
               justify="space-between"
               align="center"
-              px="16px"
+             
               py="10px"
               borderBottomWidth="1px"
               borderColor="gray.300"
@@ -148,6 +141,37 @@ function Hero() {
               >
                 Play Data · timestamps supported
               </Text>
+
+                <Box
+                    fontFamily="poppins"
+            
+                color="black"
+                fontSize="14px"
+                as="select"
+          
+                w="fit-content"
+                borderWidth="1px"
+                borderColor="gray.300"
+                borderRadius="12px"
+                p="8px"
+                px={"12px"}
+                bg="white"
+             
+                _focus={{
+                  borderColor: "black",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
+              >
+                <Box as="option" value="neutral">
+                  Hugging Face
+                </Box>
+                <Box as="option" value="energetic">
+                  Eeleven labs
+                </Box>
+                <Box as="option" value="calm">
+                  Other
+                </Box>
+              </Box>
               
               <Text fontFamily="poppins" color="gray.600" fontSize="12px">
                 Example keys:{" "}
@@ -210,10 +234,10 @@ function Hero() {
         <VStack
    
    
-          justify="start"
+          justify="space-between"
           align="stretch"
           position="relative"
-          h="100%"
+          h={"100%"}
           w={["100%%", "100%%", "100%%", "100%", "100%", "100%"]}
           
         >
@@ -433,7 +457,7 @@ function Hero() {
 
             as="button"
             borderRadius="16px"
-            bg="black"
+            bg="orange.400"
             color="white"
             p="16px"
             textAlign="center"
@@ -461,7 +485,7 @@ function Hero() {
         </VStack>
       </HStack>
 
-      <VStack w={["100%", "100%", "100%", "100%", "100%", "100%"]}  px={["4%", "4%", "6%", "6%", "6%", "10%"]}>
+      <VStack w={["100%", "100%", "100%", "100%", "100%", "100%"]}  px={["4%", "4%", "6%", "6%", "6%", "16%"]}>
         <HStack justify={"center"} align="start" w="100%" flexWrap={[ "wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]} >
           <Box
             spellCheck={false}
@@ -609,9 +633,9 @@ function Hero() {
                  fontWeight={500}
                    fontFamily={"poppins"}
           >
-            Commentator 1: "Play-by-Play"
+        Transript
                <Box mt="20px" textAlign="start"> 
-Hi
+HI
           </Box>
           </Box>
                  <Box
@@ -631,7 +655,7 @@ Hi
             boxShadow="md"
             fontWeight={500}
             fontFamily={"poppins"}
-          >  Commentator 2: "Color"
+          >  Transript
 
 
              <Box mt="20px" textAlign="start"> 
