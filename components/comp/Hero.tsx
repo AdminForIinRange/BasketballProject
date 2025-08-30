@@ -1,5 +1,14 @@
 "use client";
-import { Box, VStack, Text, HStack, Span, Link } from "@chakra-ui/react";
+import {
+  Box,
+  VStack,
+  Text,
+  HStack,
+  Span,
+  Link,
+  IconButton,
+} from "@chakra-ui/react";
+import { Share, Upload } from "lucide-react";
 
 function Hero() {
   return (
@@ -13,9 +22,9 @@ function Hero() {
         px={["4%", "4%", "6%", "6%", "6%", "10%"]}
       >
         <Text
-          fontSize={["16px", "18px", "24px"]}
+          fontSize={["16px", "18px", "18px"]}
           fontFamily="poppins"
-          fontWeight={700}
+          fontWeight={500}
           lineHeight="1.6"
           color="black"
         >
@@ -35,8 +44,7 @@ function Hero() {
         </Text>
 
         <Box
-        mb={["20px", "20px", "25px", "30px", "30px", "40px"]}
-
+          mb={["20px", "20px", "25px", "30px", "30px", "40px"]}
           my="25px"
           w={["100%", "100%", "100%", "640px", "640px", "640px"]}
           borderWidth="1px"
@@ -91,12 +99,11 @@ function Hero() {
               >
                 JSON mode · timestamps supported
               </Text>
-              <Text
-                fontFamily="poppins"
-                color="gray.600"
-                fontSize="12px"
-              >
-                Example keys: <Span as="span" color="black">time, speaker, text</Span>
+              <Text fontFamily="poppins" color="gray.600" fontSize="12px">
+                Example keys:{" "}
+                <Span as="span" color="black">
+                  time, speaker, text
+                </Span>
               </Text>
             </HStack>
 
@@ -191,7 +198,10 @@ function Hero() {
                 bg="white"
                 fontFamily="poppins"
                 color="black"
-                _focus={{ outline: "none", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)" }}
+                _focus={{
+                  outline: "none",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
               >
                 Character 1
               </Box>
@@ -209,7 +219,10 @@ function Hero() {
                 bg="white"
                 fontFamily="poppins"
                 color="black"
-                _focus={{ outline: "none", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)" }}
+                _focus={{
+                  outline: "none",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
               >
                 Character 2
               </Box>
@@ -235,11 +248,20 @@ function Hero() {
                 p="10px"
                 bg="white"
                 color="black"
-                _focus={{ borderColor: "black", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)" }}
+                _focus={{
+                  borderColor: "black",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
               >
-                <Box as="option" value="neutral">Neutral</Box>
-                <Box as="option" value="energetic">Energetic</Box>
-                <Box as="option" value="calm">Calm</Box>
+                <Box as="option" value="neutral">
+                  Neutral
+                </Box>
+                <Box as="option" value="energetic">
+                  Energetic
+                </Box>
+                <Box as="option" value="calm">
+                  Calm
+                </Box>
               </Box>
             </Box>
           </Box>
@@ -278,7 +300,10 @@ function Hero() {
                 bg="white"
                 fontFamily="poppins"
                 color="black"
-                _focus={{ outline: "none", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)" }}
+                _focus={{
+                  outline: "none",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
               >
                 Analyst
               </Box>
@@ -296,7 +321,10 @@ function Hero() {
                 bg="white"
                 fontFamily="poppins"
                 color="black"
-                _focus={{ outline: "none", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)" }}
+                _focus={{
+                  outline: "none",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
               >
                 Sideline
               </Box>
@@ -322,11 +350,20 @@ function Hero() {
                 p="10px"
                 bg="white"
                 color="black"
-                _focus={{ borderColor: "black", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)" }}
+                _focus={{
+                  borderColor: "black",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                }}
               >
-                <Box as="option" value="insightful">Insightful</Box>
-                <Box as="option" value="humorous">Humorous</Box>
-                <Box as="option" value="dramatic">Dramatic</Box>
+                <Box as="option" value="insightful">
+                  Insightful
+                </Box>
+                <Box as="option" value="humorous">
+                  Humorous
+                </Box>
+                <Box as="option" value="dramatic">
+                  Dramatic
+                </Box>
               </Box>
             </Box>
           </Box>
@@ -344,11 +381,21 @@ function Hero() {
             transition="background-color 0.2s ease, transform 0.05s ease"
             fontFamily="poppins"
             fontWeight={700}
-            onMouseDown={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(1px)"; }}
-            onMouseUp={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}
+            onMouseDown={(e) => {
+              (e.currentTarget as HTMLDivElement).style.transform =
+                "translateY(1px)";
+            }}
+            onMouseUp={(e) => {
+              (e.currentTarget as HTMLDivElement).style.transform =
+                "translateY(0)";
+            }}
           >
             <HStack gap="10px" justify="center">
-              <Text fontSize={["18px", "18px", "20px"]} lineHeight="1.1" color="white">
+              <Text
+                fontSize={["18px", "18px", "20px"]}
+                lineHeight="1.1"
+                color="white"
+              >
                 Generate
               </Text>
             </HStack>
@@ -356,9 +403,187 @@ function Hero() {
         </VStack>
       </HStack>
 
+      <VStack>
+        <HStack justify={"center"} align="start" w="100%">
+          <Box
+            spellCheck={false}
+            wrap="off"
+            resize="none"
+            fontSize="13px"
+            lineHeight="1.6"
+            bg="white"
+            color="black"
+            borderWidth="1px"
+            borderColor="gray.300"
+            borderRadius="12px"
+            p="12px"
+            h="100%"
+            w="1000px"
+            boxShadow="md"
+          >
+            {/* PLAYER BODY */}
+            <HStack align="stretch" spacing={4} w="100%">
+              {/* PLAY BUTTON */}
+              <Box
+                as="button"
+                w="72px"
+                minW="72px"
+                h="110px"
+                borderRadius="10px"
+                borderWidth="1px"
+                borderColor="gray.300"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                bg="gray.50"
+                _hover={{ bg: "gray.100" }}
+              >
+                <Text fontSize="24px">▶</Text>
+              </Box>
 
-      <Box></Box>
+              {/* RIGHT SIDE: TITLE + WAVEFORM + CONTROLS */}
 
+              <VStack align="start" spacing={3} w="100%">
+                {/* TITLE */}
+
+                {/* WAVEFORM (spiky bars like SoundCloud) */}
+                {(() => {
+                  const progress = 38; // % played — wire this to your audio time
+                  const count = 170; // number of bars
+                  // generate pleasant, uneven peaks
+                  const bars = Array.from({ length: count }, (_, i) => {
+                    const t = i / count;
+                    const env = Math.sin(Math.PI * t); // fade in/out envelope
+                    const ripple =
+                      Math.sin(i * 0.55) * 0.35 +
+                      Math.sin(i * 0.13) * 0.2 +
+                      Math.sin(i * 0.03) * 0.1;
+                    const h = Math.max(0.08, env * (0.55 + ripple)); // 0..~1
+                    return Math.round(h * 70) + 10; // px height
+                  });
+
+                  const BarRow = ({ color }: { color: string }) => (
+                    <HStack
+                      spacing="3px"
+                      align="end"
+                      position="absolute"
+                      top="50%"
+                      transform="translateY(-50%)"
+                      pl="4px"
+                      pr="4px"
+                    >
+                      {bars.map((h, i) => (
+                        <Box
+                          key={`${color}-${i}`}
+                          w="3px"
+                          h={`${h}px`}
+                          bg={color}
+                          borderRadius="2px"
+                        />
+                      ))}
+                    </HStack>
+                  );
+
+                  return (
+                    <Box
+                      position="relative"
+                      w="100%"
+                      h="110px"
+                      borderWidth="1px"
+                      borderColor="gray.200"
+                      borderRadius="8px"
+                      bg="gray.50"
+                      overflow="hidden"
+                    >
+                      {/* Base (unplayed) bars */}
+                      <BarRow color="orange.200" />
+                      {/* Played overlay */}
+                      <Box
+                        position="absolute"
+                        top="0"
+                        left="0"
+                        h="100%"
+                        w={`${progress}%`}
+                        overflow="hidden"
+                      >
+                        <BarRow color="orange.400" />
+                      </Box>
+                    </Box>
+                  );
+                })()}
+
+                {/* CONTROLS ROW */}
+                <HStack justify="space-between" align="center" w="100%">
+                  {/* Volume */}
+
+                  {/* Timecode */}
+                  <Text fontSize="12px" color="gray.600">
+                    00:00 / 04:04
+                  </Text>
+
+                  {/* Upload and Share */}
+                  <HStack spacing="2" align="center">
+                    <Upload size={20} />
+                  </HStack>
+                </HStack>
+              </VStack>
+            </HStack>
+          </Box>
+        </HStack>
+
+
+         <HStack justify={"center"} align="start" w="1000px" >
+          <Box
+            spellCheck={false}
+            wrap="off"
+            resize="none"
+            fontSize="13px"
+            lineHeight="1.6"
+            bg="white"
+            color="black"
+            borderWidth="1px"
+            borderColor="gray.300"
+            borderRadius="12px"
+            p="12px"
+           h="500px"
+            w="100%"
+            boxShadow="md"
+                 fontWeight={500}
+                   fontFamily={"poppins"}
+          >
+            Commentator 1: "Play-by-Play"
+               <Box mt="20px" textAlign="start"> 
+Hi
+          </Box>
+          </Box>
+                 <Box
+            spellCheck={false}
+            wrap="off"
+            resize="none"
+            fontSize="13px"
+            lineHeight="1.6"
+            bg="white"
+            color="black"
+            borderWidth="1px"
+            borderColor="gray.300"
+            borderRadius="12px"
+            p="12px"
+            h="500px"
+            w="100%"
+            boxShadow="md"
+            fontWeight={500}
+            fontFamily={"poppins"}
+          >  Commentator 2: "Color"
+
+
+             <Box mt="20px" textAlign="start"> 
+Hi
+          </Box>
+          </Box>
+          
+       
+          </HStack>
+      </VStack>
     </>
   );
 }

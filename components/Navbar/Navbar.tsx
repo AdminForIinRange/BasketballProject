@@ -5,6 +5,9 @@ import { Box, Text } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
+import BasketCallerLogo from "@/public/logo/basketcaller.png"; // Adjust the path as necessary
+import BasketCallerLogo from "@/public/logo/basketcaller.png"; // Adjust the path as necessary
+
 
 
 const Navbar = () => {
@@ -78,11 +81,11 @@ const Navbar = () => {
                 index !== items.length - 1 ? "1px solid #F5F5F5" : "none"
               }
             >
-              <Text  textStyle={"smallText"} fontWeight="500" mb="4px">
+              <Text textStyle={"smallText"} fontWeight="500" mb="4px">
                 {item.label}
               </Text>
               {item.description && (
-                <Text  textStyle={"smallText"} color="#666" lineHeight="1.4">
+                <Text textStyle={"smallText"} color="#666" lineHeight="1.4">
                   {item.description}
                 </Text>
               )}
@@ -91,7 +94,7 @@ const Navbar = () => {
         </Box>
         <Box p="12px 20px" bg="#F9F9F9" borderTop="1px solid #F5F5F5">
           <Text
-          textStyle={"smallText"}
+            textStyle={"smallText"}
             fontWeight="500"
             color="#555"
             cursor="pointer"
@@ -102,7 +105,7 @@ const Navbar = () => {
           </Text>
         </Box>
       </Box>
-    ),
+    )
   );
   Dropdown.displayName = "Dropdown";
 
@@ -143,7 +146,7 @@ const Navbar = () => {
         ))}
         <Box py="12px" borderTop="1px solid #eee">
           <Text
-           textStyle={"smallText"}
+            textStyle={"smallText"}
             fontWeight="500"
             color="#555"
             cursor="pointer"
@@ -158,7 +161,7 @@ const Navbar = () => {
           </Text>
         </Box>
       </Box>
-    ),
+    )
   );
   MobileDropdown.displayName = "MobileDropdown";
 
@@ -189,7 +192,7 @@ const Navbar = () => {
       router.push(path);
       setMobileMenuOpen(false);
     },
-    [router],
+    [router]
   );
 
   const toggleMobileDropdown = useCallback((name: string) => {
@@ -207,10 +210,8 @@ const Navbar = () => {
           link: "/about/#story",
           description: "Learn about our journey and values",
         },
-
       ],
     },
-  
   ];
 
   return (
@@ -252,13 +253,13 @@ const Navbar = () => {
             >
               {/* Luxury Property Management */}
             </Text>
-            <Text  textStyle={"smallText"} color="#666">
+            <Text textStyle={"smallText"} color="#666">
               {/* info@luxemanagement.com */}
             </Text>
           </Box>
           <Box display="flex" alignItems="center" flexWrap="wrap">
             <Text
-             textStyle={"smallText"}
+              textStyle={"smallText"}
               color="#666"
               mr="24px"
               mb={{ base: "4px", sm: "0" }}
@@ -308,16 +309,26 @@ const Navbar = () => {
             </Box>
             <Box>
               <Text
-             textStyle={"basicText"}
+                textStyle={"basicText"}
                 fontWeight="600"
                 letterSpacing="0.2px"
                 fontFamily="arial"
                 color="#222222"
                 lineHeight="1.1"
               >
-             BasketCaller
+                BasketCaller
               </Text>
 
+              <Image
+                src="@/"
+                alt="BasketCaller Logo"
+                title="BasketCaller Logo"
+                width={100}
+                height={30}
+                style={{ marginTop: "4px" }}
+              />
+            </Box>
+          </Box>
             </Box>
           </Box>
 
@@ -362,7 +373,7 @@ const Navbar = () => {
                   role="group"
                 >
                   <Text
-                   textStyle={"smallText"}
+                    textStyle={"smallText"}
                     fontWeight={activePage === item.path ? "600" : "500"}
                     fontFamily="arial"
                     transition="all 0.2s ease"
@@ -370,8 +381,8 @@ const Navbar = () => {
                       activePage === item.path
                         ? "#000000"
                         : hoveredItem === item.name.toLowerCase()
-                          ? "#000000"
-                          : "#444444"
+                        ? "#000000"
+                        : "#444444"
                     }
                     letterSpacing="0.3px"
                     whiteSpace="nowrap"
@@ -386,8 +397,8 @@ const Navbar = () => {
                       activePage === item.path
                         ? "100%"
                         : hoveredItem === item.name.toLowerCase()
-                          ? "70%"
-                          : "0%"
+                        ? "70%"
+                        : "0%"
                     }
                     height="2px"
                     bg={activePage === item.path ? "#000000" : "#555555"}
@@ -447,11 +458,11 @@ const Navbar = () => {
               onClick={() => handleNavigate("/contact")}
             >
               <Text
-            textStyle={"smallText"}
+                textStyle={"smallText"}
                 fontWeight="500"
                 whiteSpace="nowrap"
               >
-              Get Started
+                Get Started
               </Text>
             </Box>
           </Box>
@@ -493,7 +504,7 @@ const Navbar = () => {
                 }}
               >
                 <Text
-              textStyle={"smallText"}
+                  textStyle={"smallText"}
                   fontWeight={activePage === item.path ? "600" : "500"}
                   color={activePage === item.path ? "#000" : "#444"}
                 >
@@ -535,7 +546,7 @@ const Navbar = () => {
             onClick={() => handleNavigate("/contact")}
             textAlign="center"
           >
-            <Text  textStyle={"smallText"} fontWeight="500">
+            <Text textStyle={"smallText"} fontWeight="500">
               Get a Quote
             </Text>
           </Box>
@@ -545,11 +556,11 @@ const Navbar = () => {
             <Text textStyle={"smallText"} color="#666" mb="12px">
               {/* info@luxemanagement.com */}
             </Text>
-            <Text  textStyle={"smallText"} color="#666" mb="12px">
+            <Text textStyle={"smallText"} color="#666" mb="12px">
               {/* +61 406 631 461 */}
             </Text>
             <Text
-           textStyle={"smallText"}
+              textStyle={"smallText"}
               fontWeight="500"
               color="#333"
               cursor="pointer"
