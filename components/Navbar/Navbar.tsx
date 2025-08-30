@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useCallback, memo, useEffect } from "react";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, HStack, Span, Text } from "@chakra-ui/react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import BasketCallerLogo from "@/public/logo/basketcaller.png";
+import BasketCallerTextLogo from "@/public/logo/basketcallerTextLogo.png";
 
 type NavItem = {
   name: string;
@@ -276,6 +277,7 @@ const Navbar = () => {
               mr="12px"
               position="relative"
             >
+              
               <Image
                 src={BasketCallerLogo}
                 alt="BasketCaller Logo"
@@ -285,6 +287,8 @@ const Navbar = () => {
                 style={{ objectFit: "contain" }}
                 priority
               />
+                
+              
             </Box>
             <Box>
               <Text
@@ -295,7 +299,7 @@ const Navbar = () => {
                 color="#222222"
                 lineHeight="1.1"
               >
-                BasketCaller
+                Basket<Span color="orange.400">Caller</Span>
               </Text>
             </Box>
           </Box>
