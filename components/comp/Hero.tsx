@@ -60,6 +60,8 @@ function Hero() {
         alignItems="start"
         w="100%"
         spacing={["16px", "16px", "20px", "24px", "24px", "32px"]}
+      flexWrap={[ "wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]} 
+        gap={["16px", "16px", "20px", "24px", "24px", "32px"]}
       >
         {/* Left: JSON input panel */}
         <Box
@@ -76,7 +78,7 @@ function Hero() {
             h="100%"
             w="100%"
             borderRadius="24px"
-            bg="gray.100"
+            bg="gray.200"
             overflow="hidden"
           >
             {/* Header strip */}
@@ -108,7 +110,7 @@ function Hero() {
             </HStack>
 
             {/* Editor */}
-            <Box p="16px" h="calc(100% - 46px)">
+            <Box p="16px" h="100%">
               <Box
                 as="textarea"
                 aria-label="Paste JSON with timestamps"
@@ -168,7 +170,7 @@ function Hero() {
           <Box
             position="relative"
             borderRadius="24px"
-            bg="gray.100"
+            bg="gray.200"
             overflow="hidden"
             p="20px"
           >
@@ -272,7 +274,7 @@ function Hero() {
           <Box
             position="relative"
             borderRadius="24px"
-            bg="gray.100"
+            bg="gray.200"
             overflow="hidden"
             p="20px"
           >
@@ -409,8 +411,8 @@ function Hero() {
         </VStack>
       </HStack>
 
-      <VStack>
-        <HStack justify={"center"} align="start" w="100%">
+      <VStack w={["100%", "100%", "100%", "100%", "100%", "100%"]}  px={["4%", "4%", "6%", "6%", "6%", "10%"]}>
+        <HStack justify={"center"} align="start" w="100%" flexWrap={[ "wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]} >
           <Box
             spellCheck={false}
             wrap="off"
@@ -442,7 +444,7 @@ function Hero() {
                 alignItems="center"
                 justifyContent="center"
                 bg="gray.50"
-                _hover={{ bg: "gray.100" }}
+                _hover={{ bg: "gray.200" }}
               >
                 <Text fontSize="24px">▶</Text>
               </Box>
@@ -538,7 +540,7 @@ function Hero() {
         </HStack>
 
 
-         <HStack justify={"center"} align="start" w="1000px" >
+         <HStack justify={"center"} align="center" w={["100%", "100%", "100%", "1000px", "1000px", "1000px"]}   flexWrap={[ "wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}   >
           <Box
             spellCheck={false}
             wrap="off"
