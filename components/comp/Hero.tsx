@@ -31,7 +31,7 @@ function Hero() {
           px={["5%", "5%", "0", "10%", "10%", "20%"]}
           mt="6px"
         >
-          Generate quality audio for basketball commentary
+          Generate quality audio for basketball commentor
         </Text>
 
         <Box
@@ -173,7 +173,7 @@ function Hero() {
               lineHeight="1.1"
               color="black"
             >
-              Play-by-Play Commentary
+              Play-by-Play Commentator
             </Text>
 
             <HStack gap="10px" mt="10px" flexWrap="wrap">
@@ -260,7 +260,7 @@ function Hero() {
               lineHeight="1.1"
               color="black"
             >
-              Choose Color Commentary
+              Choose Color Commentator
             </Text>
 
             <HStack gap="10px" mt="10px" flexWrap="wrap">
@@ -355,6 +355,10 @@ function Hero() {
           </Box>
         </VStack>
       </HStack>
+
+
+      <Box></Box>
+
     </>
   );
 }
