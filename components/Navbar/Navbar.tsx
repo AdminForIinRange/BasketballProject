@@ -227,31 +227,8 @@ const Navbar = () => {
       backdropFilter="blur(10px)"
     >
       {/* Top Bar */}
-      <Box
-        w="100%"
-        py="8px"
-        fontFamily="arial"
-        backdropFilter="blur(10px)"
-        borderBottom="1px solid #F0F0F0"
-        display={{ base: "none", md: "block" }}
-      >
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          maxW="1400px"
-          mx="auto"
-          px={{ base: "20px", lg: "40px" }}
-        >
-          <Box display="flex" alignItems="center" flexWrap="wrap">
-            <Text textStyle="smallText" color="#666" mr="24px" mb={{ base: "4px", sm: "0" }} />
-            <Text textStyle="smallText" color="#666" />
-          </Box>
-          <Box display="flex" alignItems="center" flexWrap="wrap">
-            <Text textStyle="smallText" color="#666" mr="24px" mb={{ base: "4px", sm: "0" }} />
-          </Box>
-        </Box>
-      </Box>
+   
+   
 
       {/* Main Navigation */}
       <Box w="100%" py="10px" borderBottom="1px solid #F0F0F0" transition="all 0.3s ease">

@@ -185,7 +185,8 @@ function Hero() {
 
             <HStack gap="10px" mt="10px" flexWrap="wrap">
               <Box
-                as="span"
+               cursor={"pointer"}
+                as="button"
                 contentEditable
                 suppressContentEditableWarning
                 role="textbox"
@@ -206,7 +207,8 @@ function Hero() {
                 Character 1
               </Box>
               <Box
-                as="span"
+               cursor={"pointer"}
+                as="button"
                 contentEditable
                 suppressContentEditableWarning
                 role="textbox"
@@ -287,7 +289,8 @@ function Hero() {
 
             <HStack gap="10px" mt="10px" flexWrap="wrap">
               <Box
-                as="span"
+              cursor={"pointer"}
+                as="button"
                 contentEditable
                 suppressContentEditableWarning
                 role="textbox"
@@ -304,11 +307,14 @@ function Hero() {
                   outline: "none",
                   boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
                 }}
+                
+
               >
                 Analyst
               </Box>
               <Box
-                as="span"
+                   cursor={"pointer"}
+             as="button"
                 contentEditable
                 suppressContentEditableWarning
                 role="textbox"
