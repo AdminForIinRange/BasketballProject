@@ -1,6 +1,8 @@
 "use client";
 import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import TranscriptJsonPanel from "./TranscriptJsonPanel";
+import TranscriptPanel from "./TranscriptModal";
 
 type TranscriptItem = { time?: string; speaker?: string; text: string };
 
@@ -92,6 +94,80 @@ const AudioData = () => {
     </HStack>
   );
 
+  
+const sample: TranscriptItem[] = [
+  {
+    time: "00:00:03.250",
+    speaker: "PlayByPlay",
+    text: "And we’re underway, tip-off goes to the Tigers.",
+  },
+  {
+    time: "00:00:07.900",
+    speaker: "Color",
+    text: "Okafor really climbed the ladder for that one.",
+  },
+  {
+    time: "00:00:10.800",
+    speaker: "PlayByPlay",
+    text: "Johnson brings it across midcourt, looking to set things up.",
+  },
+  {
+    time: "00:00:13.300",
+    speaker: "PlayByPlay",
+    text: "He finds Okafor near the elbow.",
+  },
+  {
+    time: "00:00:14.200",
+    speaker: "Color",
+    text: "This is where he loves to operate, he’s so tough to guard there.",
+  },
+  {
+    time: "00:00:16.000",
+    speaker: "PlayByPlay",
+    text: "Okafor drives right, defender stays with him.",
+  },
+  {
+    time: "00:00:19.200",
+    speaker: "PlayByPlay",
+    text: "Floater in the lane… and it drops!",
+  },
+  {
+    time: "00:00:21.000",
+    speaker: "Color",
+    text: "Soft touch—he makes that look easy.",
+  },
+  {
+    time: "00:00:23.300",
+    speaker: "PlayByPlay",
+    text: "Tigers get a stop on the other end, pushing quickly.",
+  },
+  {
+    time: "00:00:25.200",
+    speaker: "PlayByPlay",
+    text: "Johnson leading the break, dishes back to Okafor.",
+  },
+  {
+    time: "00:00:27.100",
+    speaker: "Color",
+    text: "Great decision—kept the defense on its heels.",
+  },
+  {
+    time: "00:00:29.400",
+    speaker: "PlayByPlay",
+    text: "Okafor spins to the left hand, rises for the jumper…",
+  },
+  {
+    time: "00:00:36.300",
+    speaker: "PlayByPlay",
+    text: "And it’s good! Tigers extend their lead.",
+  },
+  {
+    time: "00:00:38.100",
+    speaker: "Color",
+    text: "That’s six quick points from Okafor—what a start.",
+  },
+];
+
   return (
     <>
       <VStack w="100%" px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
@@ -157,8 +233,23 @@ const AudioData = () => {
 
             {/* Hidden audio element */}
             <audio ref={audioRef} preload="auto" />
+
+           
           </Box>
+           
         </HStack>
+         <VStack w="full">
+          <HStack
+            justify="center"
+            align="stretch"
+            w={["100%", "100%", "100%", "100%", "100%", "100%"]}
+            flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
+            spacing={4}
+          >
+            <TranscriptJsonPanel title="Raw Transcript" lines={sample} h={500} />
+            <TranscriptPanel title="Transcript Timeline " lines={sample} h={500} />
+          </HStack>
+        </VStack>
       </VStack>
     </>
   );

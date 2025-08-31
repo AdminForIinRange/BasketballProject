@@ -4,6 +4,7 @@ import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 import { ChevronDown } from "lucide-react";
 import { parseTranscriptJSON } from "@/lib/parseTranscript";
 import { publishAudioUrl } from "@/lib/audioBus";
+import TranscriptPanel from "./TranscriptJsonPanel";
 
 const InputBoxes = () => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -21,11 +22,11 @@ const InputBoxes = () => {
 
       setSpeaking(true);
 
-      const res = await fetch("/api/playai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lines }), // you can also send custom voices/seed here
-      });
+const res = await fetch("/api/mixTwoVoices", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ lines }),
+});
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -52,7 +53,7 @@ const InputBoxes = () => {
   ];
 
   const modelOptions = [
-    { label: "GPT-3.5", value: "gpt-3.5" },
+    { label: "PlayAI", value: "gpt-3.5" },
     { label: "GPT-4", value: "gpt-4" },
     { label: "GPT-4 Turbo", value: "gpt-4-turbo" },
   ];
@@ -141,12 +142,12 @@ const InputBoxes = () => {
 
   return (
     <>
-      <VStack 
-        justify={["center", "center", "space-between", "space-between", "space-between", "space-between"]}
+     <VStack 
+        justify="space-between"
         align="stretch"
         position="relative"
         h="100%"
-        w="100%"
+        w="auto"
                 py="10px"
       >
         {sections.map((section, i) => (
@@ -175,7 +176,7 @@ const InputBoxes = () => {
         ))}
 
         {/* Generate */}
-        <Box
+<Box
         mt="15px"
         as="button"
         w="360px"
@@ -201,6 +202,9 @@ const InputBoxes = () => {
       </Box>
 
         <textarea ref={textareaRef} style={{ display: "none" }} />
+
+
+       
       </VStack>
     </>
   );
