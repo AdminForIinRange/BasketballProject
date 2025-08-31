@@ -3,9 +3,5 @@
 "use client";
 
 export default function Loading() {
-  return (
-   
-      <span className="sr-only">Loading...</span>
-
-  );
+  return <span className="sr-only">Loading...</span>;
 }

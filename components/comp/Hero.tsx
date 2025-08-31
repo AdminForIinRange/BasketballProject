@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 
 import InputBoxes from "./InputBoxes";
 import AudioData from "./AudioData";
-import AudioOverlap from "./AuidoOverlap";          // ✅ fixed name
+import AudioOverlap from "./AuidoOverlap"; // ✅ fixed name
 import TranscriptJsonPanel from "./TranscriptJsonPanel";
 // We still use the shared timeline component INSIDE AudioOverlap now
 // import TranscriptTimeline from "./TranscriptTimeline";
@@ -17,7 +17,7 @@ type Line = { time?: string; speaker?: string; text: string };
 
 function splitBySpeaker(lines: Line[]) {
   const color: Line[] = [];
-  const play: Line[]  = [];
+  const play: Line[] = [];
   for (const l of lines) {
     const s = (l.speaker || "").toLowerCase();
     if (s.includes("color")) color.push(l);
@@ -32,7 +32,9 @@ export default function Hero() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFilePick = () => fileInputRef.current?.click();
-  const handleFileLoad: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+  const handleFileLoad: React.ChangeEventHandler<HTMLInputElement> = async (
+    e,
+  ) => {
     const f = e.target.files?.[0];
     if (!f) return;
     const text = await f.text().catch(() => "");
@@ -69,7 +71,12 @@ export default function Hero() {
             {/* Header strip */}
             <HStack w="100%" justify="space-between" align="center">
               <Box w="100%">
-                <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px">
+                <Text
+                  fontFamily="poppins"
+                  fontWeight={600}
+                  color="black"
+                  fontSize="20px"
+                >
                   Game Data
                 </Text>
               </Box>
@@ -149,8 +156,16 @@ export default function Hero() {
           flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
           spacing={4}
         >
-          <TranscriptTimelineBoth title="Transcript" lines={colorLines as any} h={500} />
-          <TranscriptJsonPanel title="Raw Transcript" lines={parsedLines as any} h={500} />
+          <TranscriptTimelineBoth
+            title="Transcript"
+            lines={colorLines as any}
+            h={500}
+          />
+          <TranscriptJsonPanel
+            title="Raw Transcript"
+            lines={parsedLines as any}
+            h={500}
+          />
         </HStack>
       </VStack>
 

@@ -9,10 +9,10 @@ export function publishAudioUrl(url: string) {
 /** NEW: dual-track event for overlap mode */
 export function publishDualAudioUrls(
   playUrl: string | null,
-  colorUrl: string | null
+  colorUrl: string | null,
 ) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(
-    new CustomEvent("audio:dual", { detail: { playUrl, colorUrl } })
+    new CustomEvent("audio:dual", { detail: { playUrl, colorUrl } }),
   );
 }

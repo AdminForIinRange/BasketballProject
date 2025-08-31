@@ -14,7 +14,7 @@ function WaveformCanvas({
   audioEl,
   src,
   height = 112,
-  baseColor = "#CBD5E0",     // gray.300
+  baseColor = "#CBD5E0", // gray.300
   progressColor = "#ED8936", // orange.400
   bg = "#FFFFFF",
   onReady,
@@ -38,7 +38,8 @@ function WaveformCanvas({
     try {
       const res = await fetch(src, { mode: "cors" });
       const buf = await res.arrayBuffer();
-      const ACtor = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const ACtor =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
       const ctx = new ACtor();
       const decoded: AudioBuffer = await new Promise((resolve, reject) => {
         // Safari requires callback form sometimes
@@ -51,7 +52,8 @@ function WaveformCanvas({
       const peaks = new Array(Math.floor(channel.length / samplesPerBucket));
 
       for (let i = 0, p = 0; i < channel.length; i += samplesPerBucket, p++) {
-        let min = 1.0, max = -1.0;
+        let min = 1.0,
+          max = -1.0;
         for (let j = 0; j < samplesPerBucket && i + j < channel.length; j++) {
           const v = channel[i + j];
           if (v < min) min = v;
@@ -70,7 +72,9 @@ function WaveformCanvas({
     }
   }, [src, onReady]);
 
-  useEffect(() => { decodeToPeaks(); }, [decodeToPeaks]);
+  useEffect(() => {
+    decodeToPeaks();
+  }, [decodeToPeaks]);
 
   const repaint = useCallback(() => {
     const canvas = canvasRef.current;
@@ -101,7 +105,7 @@ function WaveformCanvas({
       const step = Math.max(1, Math.floor(peaks.length / width));
       for (let x = 0, i = 0; x < width; x++, i += step) {
         const amp = peaks[Math.min(i, peaks.length - 1)] ?? 0;
-        const h = Math.max(2, Math.round(amp * (heightPx * 0.9) / 2));
+        const h = Math.max(2, Math.round((amp * (heightPx * 0.9)) / 2));
         ctx.beginPath();
         ctx.moveTo(x + 0.5, mid - h);
         ctx.lineTo(x + 0.5, mid + h);
@@ -117,7 +121,9 @@ function WaveformCanvas({
 
     // progress overlay
     if (audioEl && audioEl.duration > 0) {
-      const progressX = Math.round((audioEl.currentTime / audioEl.duration) * width);
+      const progressX = Math.round(
+        (audioEl.currentTime / audioEl.duration) * width,
+      );
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, 0, progressX, heightPx);
@@ -128,7 +134,7 @@ function WaveformCanvas({
         const step = Math.max(1, Math.floor(peaks.length / width));
         for (let x = 0, i = 0; x < progressX; x++, i += step) {
           const amp = peaks[Math.min(i, peaks.length - 1)] ?? 0;
-          const h = Math.max(2, Math.round(amp * (heightPx * 0.9) / 2));
+          const h = Math.max(2, Math.round((amp * (heightPx * 0.9)) / 2));
           ctx.beginPath();
           ctx.moveTo(x + 0.5, mid - h);
           ctx.lineTo(x + 0.5, mid + h);
@@ -155,7 +161,10 @@ function WaveformCanvas({
   // animation repaint
   useEffect(() => {
     let raf = 0;
-    const tick = () => { repaint(); raf = requestAnimationFrame(tick); };
+    const tick = () => {
+      repaint();
+      raf = requestAnimationFrame(tick);
+    };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [repaint]);
@@ -203,7 +212,13 @@ function WaveformCanvas({
     >
       <canvas
         ref={canvasRef}
-        style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor: "pointer" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "block",
+          touchAction: "none",
+          cursor: "pointer",
+        }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -216,8 +231,12 @@ function WaveformCanvas({
 /* ================= helpers ================= */
 const format = (s: number) => {
   if (!Number.isFinite(s)) return "00:00";
-  const m = Math.floor(s / 60).toString().padStart(2, "0");
-  const sec = Math.floor(s % 60).toString().padStart(2, "0");
+  const m = Math.floor(s / 60)
+    .toString()
+    .padStart(2, "0");
+  const sec = Math.floor(s % 60)
+    .toString()
+    .padStart(2, "0");
   return `${m}:${sec}`;
 };
 
@@ -245,7 +264,8 @@ export default function AudioData() {
       setAudioUrl(detail.url);
     };
     window.addEventListener("audio:url", onAudioUrl as EventListener);
-    return () => window.removeEventListener("audio:url", onAudioUrl as EventListener);
+    return () =>
+      window.removeEventListener("audio:url", onAudioUrl as EventListener);
   }, []);
 
   /* ---- sequenced load + canplay gate ---- */
@@ -253,7 +273,7 @@ export default function AudioData() {
     const a = audioRef.current;
     if (!a || !audioUrl) return;
 
-    const mySeq = ++loadSeq.current;  // claim this load turn
+    const mySeq = ++loadSeq.current; // claim this load turn
     a.pause();
     setIsPlaying(false);
 
@@ -284,7 +304,8 @@ export default function AudioData() {
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => setTime({ cur: a.currentTime || 0, dur: a.duration || 0 });
+    const onTime = () =>
+      setTime({ cur: a.currentTime || 0, dur: a.duration || 0 });
     const onEnd = () => setIsPlaying(false);
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onTime);
@@ -317,7 +338,10 @@ export default function AudioData() {
   const seek = (delta: number) => {
     const a = audioRef.current;
     if (!a) return;
-    a.currentTime = Math.max(0, Math.min(a.duration || 0, (a.currentTime || 0) + delta));
+    a.currentTime = Math.max(
+      0,
+      Math.min(a.duration || 0, (a.currentTime || 0) + delta),
+    );
   };
 
   /* ---- example transcript block (optional) ---- */
@@ -325,7 +349,12 @@ export default function AudioData() {
   return (
     <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
       <Box w="100%">
-        <Text fontFamily="poppins" fontWeight="600" color="black" fontSize="20px">
+        <Text
+          fontFamily="poppins"
+          fontWeight="600"
+          color="black"
+          fontSize="20px"
+        >
           Audio Player
         </Text>
       </Box>
@@ -343,17 +372,26 @@ export default function AudioData() {
       >
         {/* Controls */}
         <HStack spacing={3} mb={3}>
-          <Button onClick={() => seek(-5)} isDisabled={!audioUrl}>-5s</Button>
+          <Button onClick={() => seek(-5)} isDisabled={!audioUrl}>
+            -5s
+          </Button>
           <Button onClick={togglePlay} isDisabled={!audioUrl}>
             {isPlaying ? "Pause" : "Play"}
           </Button>
-          <Button onClick={() => seek(5)} isDisabled={!audioUrl}>+5s</Button>
+          <Button onClick={() => seek(5)} isDisabled={!audioUrl}>
+            +5s
+          </Button>
 
           <Text fontSize="14px" color="gray.600" ml="auto">
             {format(time.cur)} / {format(time.dur)}
           </Text>
 
-          <Button as="a" href={audioUrl ?? undefined} download isDisabled={!audioUrl}>
+          <Button
+            as="a"
+            href={audioUrl ?? undefined}
+            download
+            isDisabled={!audioUrl}
+          >
             Download
           </Button>
         </HStack>
@@ -373,8 +411,6 @@ export default function AudioData() {
       </Box>
 
       {/* Optional Transcript Box */}
-
-      
     </VStack>
   );
 }

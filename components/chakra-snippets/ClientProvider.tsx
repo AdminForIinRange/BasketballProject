@@ -15,5 +15,3 @@ export default function ClientProvider({
 }) {
   return <Provider>{children}</Provider>;
 }
-
-

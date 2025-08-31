@@ -13,7 +13,11 @@ type Props = {
   h?: string | number;
 };
 
-export default function TranscriptTimelineBoth({ title = "Transcript", lines, h = 500 }: Props) {
+export default function TranscriptTimelineBoth({
+  title = "Transcript",
+  lines,
+  h = 500,
+}: Props) {
   return (
     <Box
       bg="white"
@@ -30,7 +34,9 @@ export default function TranscriptTimelineBoth({ title = "Transcript", lines, h 
       h={h}
       overflow="hidden"
     >
-      <Text fontWeight={700} mb={2}>{title}</Text>
+      <Text fontWeight={700} mb={2}>
+        {title}
+      </Text>
 
       <Box
         as="pre"

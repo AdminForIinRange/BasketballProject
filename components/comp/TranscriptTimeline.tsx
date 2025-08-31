@@ -33,15 +33,19 @@ function timeToSeconds(t: string | undefined): number {
     // MM:SS(.ms)
     const [mm, rest] = t.split(":");
     const [ss, ms] = rest.split(".");
-    return parseInt(mm, 10) * 60 + parseInt(ss || "0", 10) + (ms ? Number(`0.${ms}`) : 0);
+    return (
+      parseInt(mm, 10) * 60 +
+      parseInt(ss || "0", 10) +
+      (ms ? Number(`0.${ms}`) : 0)
+    );
   }
   if (parts.length === 3) {
     const [hh, mmAndSs, maybeMs] = [parts[0], parts[1], parts[2]];
     const [hhStr, mmStr, ssStr] = t.split(":");
     const [ssWhole, ms] = ssStr.split(".");
     return (
-      (parseInt(hhStr || "0", 10) * 3600) +
-      (parseInt(mmStr || "0", 10) * 60) +
+      parseInt(hhStr || "0", 10) * 3600 +
+      parseInt(mmStr || "0", 10) * 60 +
       parseInt(ssWhole || "0", 10) +
       (ms ? Number(`0.${ms}`) : 0)
     );
@@ -156,7 +160,9 @@ export default function TranscriptTimeline({
                 bg={isActive ? "orange.50" : idx % 2 ? "gray.50" : "white"}
                 borderWidth={isActive ? "2px" : "1px"}
                 borderColor={isActive ? "orange.300" : "gray.200"}
-                boxShadow={isActive ? "0 6px 14px rgba(237, 137, 54, 0.25)" : "none"}
+                boxShadow={
+                  isActive ? "0 6px 14px rgba(237, 137, 54, 0.25)" : "none"
+                }
                 transition="background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease"
                 transform={isActive ? "translateY(-1px)" : "none"}
                 cursor={onSeek ? "pointer" : "default"}

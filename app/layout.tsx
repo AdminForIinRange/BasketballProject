@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 const ClientProvider = dynamic(
   () => import("../components/chakra-snippets/ClientProvider"),
-  { loading: () => <Loading /> }
+  { loading: () => <Loading /> },
 );
 
 export default function RootLayout({
@@ -32,10 +32,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      style={{ scrollBehavior: "smooth"}}
+      style={{ scrollBehavior: "smooth" }}
       suppressHydrationWarning
     >
-       <head>
+      <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

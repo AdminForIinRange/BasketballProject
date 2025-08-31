@@ -4,7 +4,11 @@ import { Box, Text } from "@chakra-ui/react";
 type Line = { time?: string; speaker?: string; text: string };
 type Props = { title?: string; lines: Line[]; h?: string | number };
 
-export default function TranscriptJsonPanel({ title = "Transcript", lines, h = 500 }: Props) {
+export default function TranscriptJsonPanel({
+  title = "Transcript",
+  lines,
+  h = 500,
+}: Props) {
   return (
     <Box
       bg="white"

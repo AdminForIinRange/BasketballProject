@@ -63,7 +63,9 @@ const Navbar = () => {
         transition="all 0.25s ease-in-out"
         overflow="hidden"
         display={{ base: "none", md: "block" }}
-        onMouseEnter={() => timeoutRef.current && clearTimeout(timeoutRef.current)}
+        onMouseEnter={() =>
+          timeoutRef.current && clearTimeout(timeoutRef.current)
+        }
         onMouseLeave={() => {
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
           timeoutRef.current = setTimeout(() => setActiveDropdown(null), 300);
@@ -78,7 +80,9 @@ const Navbar = () => {
               transition="all 0.2s ease"
               _hover={{ bg: "#F9F9F9" }}
               onClick={() => router.push(item.link)}
-              borderBottom={index !== items.length - 1 ? "1px solid #F5F5F5" : "none"}
+              borderBottom={
+                index !== items.length - 1 ? "1px solid #F5F5F5" : "none"
+              }
             >
               <Text textStyle="smallText" fontWeight="500" mb="4px">
                 {item.label}
@@ -104,7 +108,7 @@ const Navbar = () => {
           </Text>
         </Box>
       </Box>
-    )
+    ),
   );
   Dropdown.displayName = "Dropdown";
 
@@ -160,7 +164,7 @@ const Navbar = () => {
           </Text>
         </Box>
       </Box>
-    )
+    ),
   );
   MobileDropdown.displayName = "MobileDropdown";
 
@@ -191,7 +195,7 @@ const Navbar = () => {
       router.push(path);
       setMobileMenuOpen(false);
     },
-    [router]
+    [router],
   );
 
   const toggleMobileDropdown = useCallback((name: string) => {
@@ -227,19 +231,20 @@ const Navbar = () => {
       backdropFilter="blur(10px)"
     >
       {/* Top Bar */}
-   
-   
 
       {/* Main Navigation */}
-      <Box  w={["100%", "100%", "100%", "100%", "100%", "100%"]}
-        px={["4%", "4%", "6%", "8%", "16%", "16%"]}  py="10px" borderBottom="1px solid #F0F0F0" transition="all 0.3s ease">
+      <Box
+        w={["100%", "100%", "100%", "100%", "100%", "100%"]}
+        px={["4%", "4%", "6%", "8%", "16%", "16%"]}
+        py="10px"
+        borderBottom="1px solid #F0F0F0"
+        transition="all 0.3s ease"
+      >
         <Box
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-      
           mx="auto"
-
         >
           {/* Logo */}
           <Box
@@ -249,11 +254,9 @@ const Navbar = () => {
             onClick={() => handleNavigate("/")}
             position="relative"
           >
-            
             <Box>
               <Text
-      
-        fontSize={"24px"}
+                fontSize={"24px"}
                 fontWeight="600"
                 letterSpacing="0.2px"
                 fontFamily="arial"
@@ -272,11 +275,19 @@ const Navbar = () => {
             onClick={() => setMobileMenuOpen((v) => !v)}
             aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? <X size={24} color="#222" /> : <Menu size={24} color="#222" />}
+            {mobileMenuOpen ? (
+              <X size={24} color="#222" />
+            ) : (
+              <Menu size={24} color="#222" />
+            )}
           </Box>
 
           {/* Desktop Nav */}
-          <Box display={{ base: "none", md: "none", lg: "flex" }} alignItems="center" justifyContent="flex-end">
+          <Box
+            display={{ base: "none", md: "none", lg: "flex" }}
+            alignItems="center"
+            justifyContent="flex-end"
+          >
             {navigationItems.map((item) => (
               <Box
                 key={item.name}
@@ -307,8 +318,8 @@ const Navbar = () => {
                       pathname === item.path
                         ? "#000000"
                         : hoveredItem === item.name.toLowerCase()
-                        ? "#000000"
-                        : "#444444"
+                          ? "#000000"
+                          : "#444444"
                     }
                     letterSpacing="0.3px"
                     whiteSpace="nowrap"
@@ -323,8 +334,8 @@ const Navbar = () => {
                       pathname === item.path
                         ? "100%"
                         : hoveredItem === item.name.toLowerCase()
-                        ? "70%"
-                        : "0%"
+                          ? "70%"
+                          : "0%"
                     }
                     height="2px"
                     bg={pathname === item.path ? "#000000" : "#555555"}
@@ -342,8 +353,14 @@ const Navbar = () => {
                       width="16px"
                       height="16px"
                       pointerEvents="none"
-                      opacity={activeDropdown === item.name.toLowerCase() ? 1 : 0}
-                      visibility={activeDropdown === item.name.toLowerCase() ? "visible" : "hidden"}
+                      opacity={
+                        activeDropdown === item.name.toLowerCase() ? 1 : 0
+                      }
+                      visibility={
+                        activeDropdown === item.name.toLowerCase()
+                          ? "visible"
+                          : "hidden"
+                      }
                       transition="all 0.25s ease-in-out"
                       zIndex="101"
                     >
@@ -358,14 +375,16 @@ const Navbar = () => {
                         boxShadow="0 0 10px rgba(0, 0, 0, 0.05)"
                       />
                     </Box>
-                    <Dropdown items={item.items || []} category={item.name.toLowerCase()} />
+                    <Dropdown
+                      items={item.items || []}
+                      category={item.name.toLowerCase()}
+                    />
                   </>
                 )}
               </Box>
             ))}
 
             {/* Desktop CTA */}
-           
           </Box>
         </Box>
       </Box>
@@ -413,7 +432,11 @@ const Navbar = () => {
                 </Text>
                 {item.hasDropdown && (
                   <Box
-                    transform={mobileDropdown === item.name.toLowerCase() ? "rotate(180deg)" : "rotate(0)"}
+                    transform={
+                      mobileDropdown === item.name.toLowerCase()
+                        ? "rotate(180deg)"
+                        : "rotate(0)"
+                    }
                     transition="transform 0.3s ease"
                   >
                     <Text textStyle="smallText">↓</Text>

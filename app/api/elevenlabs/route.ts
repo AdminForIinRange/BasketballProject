@@ -11,7 +11,12 @@ const CACHE_MAX_BYTES = 32 * 1024 * 1024; // ~32MB per instance
 const cache = new Map<string, CacheEntry>();
 let cacheBytes = 0;
 
-function cacheKey(text: string, voiceId: string, modelId: string, outputFormat: string) {
+function cacheKey(
+  text: string,
+  voiceId: string,
+  modelId: string,
+  outputFormat: string,
+) {
   const h = crypto.createHash("sha1");
   h.update(voiceId + "|" + modelId + "|" + outputFormat + "|" + text);
   return h.digest("hex");
@@ -40,7 +45,10 @@ function cacheSet(key: string, buf: Buffer) {
 
 function getClient() {
   const key = process.env.ELEVENLABS_API_KEY;
-  if (!key) throw new Error("Missing ELEVENLABS_API_KEY. Add it to .env.local and restart.");
+  if (!key)
+    throw new Error(
+      "Missing ELEVENLABS_API_KEY. Add it to .env.local and restart.",
+    );
   return new ElevenLabsClient({ apiKey: key });
 }
 
@@ -63,7 +71,8 @@ export async function POST(req: NextRequest) {
 
     // safe length guard (tune per plan)
     const MAX_CHARS = 2800;
-    const text = rawText.length > MAX_CHARS ? rawText.slice(0, MAX_CHARS) : rawText;
+    const text =
+      rawText.length > MAX_CHARS ? rawText.slice(0, MAX_CHARS) : rawText;
 
     const voiceId = (body?.voiceId || "JBFqnCBsd6RMkjVDRZzb").toString();
     const modelId = (body?.modelId || "eleven_multilingual_v2").toString();
@@ -91,21 +100,23 @@ export async function POST(req: NextRequest) {
     // coerce to Buffer
     const buf = Buffer.isBuffer(audio)
       ? audio
-      : Buffer.from(await (audio as any).arrayBuffer?.() ?? []);
+      : Buffer.from((await (audio as any).arrayBuffer?.()) ?? []);
 
     cacheSet(key, buf);
 
     return new Response(buf, {
       status: 200,
       headers: {
-        "Content-Type": outputFormat.startsWith("mp3") ? "audio/mpeg" : "audio/wav",
+        "Content-Type": outputFormat.startsWith("mp3")
+          ? "audio/mpeg"
+          : "audio/wav",
         "Cache-Control": "no-store",
       },
     });
   } catch (err: any) {
-    const detail =
-      err?.response?.data ? JSON.stringify(err.response.data) :
-      err?.message ?? "Unknown server error";
+    const detail = err?.response?.data
+      ? JSON.stringify(err.response.data)
+      : (err?.message ?? "Unknown server error");
     console.error("TTS route error:", detail);
     return new Response(JSON.stringify({ error: "TTS failed", detail }), {
       status: 500,
