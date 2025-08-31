@@ -187,7 +187,7 @@ function WaveformCanvas({
   );
 }
 
-/* ========= Main: dual players + synced timelines + FULL timeline ========= */
+/* ========= Main: dual players + offsets aligned to transcript ========= */
 export default function AudioOverlap({ colorLines = [], playLines = [] }: Props) {
   const colorRef = useRef<HTMLAudioElement | null>(null);
   const playRef  = useRef<HTMLAudioElement | null>(null);
@@ -195,19 +195,17 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
   const [colorUrl, setColorUrl] = useState<string | null>(null);
   const [playUrl,  setPlayUrl]  = useState<string | null>(null);
 
+  // sequence guards when loading new URLs
   const colorSeq = useRef(0); const playSeq = useRef(0);
 
+  // timers to delay starts when global time < offset
+  const colorDelay = useRef<number | null>(null);
+  const playDelay  = useRef<number | null>(null);
+
+  // UI states
   const [isPlaying, setIsPlaying] = useState(false);
   const [tColor, setTColor] = useState({ cur: 0, dur: 0 });
   const [tPlay,  setTPlay]  = useState({ cur: 0, dur: 0 });
-
-  // —— derive FULL combined lines (sorted by time) ——
-  const fullLines: Line[] = useMemo(() => {
-    const merged = [...(colorLines || []), ...(playLines || [])];
-    return merged
-      .slice()
-      .sort((a, b) => toSec(a.time) - toSec(b.time));
-  }, [colorLines, playLines]);
 
   // receive both urls from bus
   useEffect(() => {
@@ -244,7 +242,7 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
     return () => a.removeEventListener("canplay", onCanPlay);
   }, [playUrl]);
 
-  // time
+  // clock updates from elements
   useEffect(() => {
     const ca = colorRef.current, pa = playRef.current;
     if (!ca || !pa) return;
@@ -257,38 +255,113 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
                    pa.removeEventListener("timeupdate", onP); pa.removeEventListener("loadedmetadata", onP); pa.removeEventListener("ended", onEnd); };
   }, [colorUrl, playUrl]);
 
-  // controls
-  const masterPlay = async () => {
+  // ======== Transcript alignment ========
+
+  // Offsets: when each track should start on the global transcript clock
+  const offsetColor = useMemo(() => {
+    if (!colorLines || !colorLines.length) return 0;
+    return Math.min(...colorLines.map((l) => toSec(l.time)));
+  }, [colorLines]);
+
+  const offsetPlay = useMemo(() => {
+    if (!playLines || !playLines.length) return 0;
+    return Math.min(...playLines.map((l) => toSec(l.time)));
+  }, [playLines]);
+
+  // Global transcript time we display & use for the FULL timeline:
+  // (furthest reached among both tracks + their offsets)
+  const globalTime = Math.max(
+    (tColor.cur || 0) + offsetColor,
+    (tPlay.cur  || 0) + offsetPlay
+  );
+
+  // helper: clear any delayed start timers
+  const clearDelays = () => {
+    if (colorDelay.current) { clearTimeout(colorDelay.current); colorDelay.current = null; }
+    if (playDelay.current)  { clearTimeout(playDelay.current);  playDelay.current  = null; }
+  };
+
+  // Set both elements to a desired *global* transcript time (seconds)
+  const seekGlobal = (T: number, keepPlaying: boolean) => {
     const ca = colorRef.current, pa = playRef.current;
     if (!ca || !pa) return;
-    await Promise.allSettled([ca.play(), pa.play()]);
-    setIsPlaying(true);
+    clearDelays();
+
+    // Track-local times for that global transcript time
+    const tc = Math.max(0, T - offsetColor);
+    const tp = Math.max(0, T - offsetPlay);
+
+    ca.currentTime = Math.min(ca.duration || tc, tc);
+    pa.currentTime = Math.min(pa.duration || tp, tp);
+
+    if (!keepPlaying) {
+      ca.pause(); pa.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    // If a track hasn't reached its start yet (T < offset), delay its play
+    const needDelayC = T < offsetColor;
+    const needDelayP = T < offsetPlay;
+
+    // Start immediately those that are ready
+    const plays: Promise<any>[] = [];
+    if (!needDelayC) plays.push(ca.play().catch(() => {}));
+    else ca.pause();
+    if (!needDelayP) plays.push(pa.play().catch(() => {}));
+    else pa.pause();
+
+    // Schedule delayed starts to honor offsets
+    if (needDelayC) {
+      colorDelay.current = window.setTimeout(() => {
+        ca.currentTime = 0; // starts from the beginning of its audio when it "enters" the timeline
+        ca.play().catch(() => {});
+      }, Math.round((offsetColor - T) * 1000));
+    }
+    if (needDelayP) {
+      playDelay.current = window.setTimeout(() => {
+        pa.currentTime = 0;
+        pa.play().catch(() => {});
+      }, Math.round((offsetPlay - T) * 1000));
+    }
+
+    Promise.allSettled(plays).finally(() => setIsPlaying(true));
   };
-  const masterPause = () => { colorRef.current?.pause(); playRef.current?.pause(); setIsPlaying(false); };
+
+  // controls
+  const masterPlay = () => {
+    // Start from *current* global transcript time
+    seekGlobal(globalTime, true);
+  };
+  const masterPause = () => {
+    clearDelays();
+    colorRef.current?.pause();
+    playRef.current?.pause();
+    setIsPlaying(false);
+  };
   const masterToggle = () => { isPlaying ? masterPause() : masterPlay(); };
+
   const masterSeek = (delta: number) => {
-    const bump = (a: HTMLAudioElement | null) => {
-      if (!a) return;
-      a.currentTime = Math.max(0, Math.min(a.duration || 0, (a.currentTime || 0) + delta));
-    };
-    bump(colorRef.current); bump(playRef.current);
+    const T = Math.max(0, globalTime + delta);
+    const keepPlaying = isPlaying;
+    seekGlobal(T, keepPlaying);
   };
   const masterRestart = () => {
-    if (colorRef.current) colorRef.current.currentTime = 0;
-    if (playRef.current)  playRef.current.currentTime  = 0;
+    // Jump to the earliest offset among tracks
+    const T0 = Math.min(offsetColor || 0, offsetPlay || 0, 0);
+    seekGlobal(T0, isPlaying);
   };
 
   const bothReady = Boolean(colorUrl || playUrl);
 
-  // choose a single "clock" for the FULL timeline highlight:
-  // use the furthest progress so the highlight advances even if one track is silent
-  const fullCurrent = Math.max(tColor.cur, tPlay.cur);
+  // FULL timeline uses the global transcript clock
+  const fullCurrent = globalTime;
 
   return (
     <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
       <Box w="100%">
         <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px">
-          Dual Commentary — Overlap
+          Dual Commentary — Overlap (Aligned to Transcript)
         </Text>
       </Box>
 
@@ -306,64 +379,40 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
         {/* Color track */}
         <Box mb={4}>
           <HStack mb={2} spacing={3}>
-            <Text fontWeight={700}>Color</Text>
+            <Text fontWeight={700}>Color (offset {fmt(offsetColor)})</Text>
             <Button as="a" href={colorUrl ?? undefined} download isDisabled={!colorUrl}>Download</Button>
           </HStack>
           <WaveformCanvas audioEl={colorRef.current} src={colorUrl} height={84} baseColor="#D6BCFA" progressColor="#805AD5" />
           <audio ref={colorRef} preload="auto" />
-
-          {/* {colorLines && colorLines.length > 0 && (
-            <Box mt={3}>
-              <TranscriptTimeline
-                title="Color Timeline"
-                lines={colorLines as any}
-                h={240}
-                currentTime={tColor.cur}
-                onSeek={(t) => {
-                  if (colorRef.current) colorRef.current.currentTime = t;
-                  if (playRef.current)  playRef.current.currentTime  = t; // keep aligned
-                }}
-              />
-            </Box>
-          )} */}
         </Box>
 
         {/* Play-by-Play track */}
         <Box mb={6}>
           <HStack mb={2} spacing={3}>
-            <Text fontWeight={700}>PlayByPlay</Text>
+            <Text fontWeight={700}>PlayByPlay (offset {fmt(offsetPlay)})</Text>
             <Button as="a" href={playUrl ?? undefined} download isDisabled={!playUrl}>Download</Button>
           </HStack>
           <WaveformCanvas audioEl={playRef.current} src={playUrl} height={84} baseColor="#90CDF4" progressColor="#3182CE" />
           <audio ref={playRef} preload="auto" />
-
-          {/* {playLines && playLines.length > 0 && (
-            <Box mt={3}>
-              <TranscriptTimeline
-                title="PlayByPlay Timeline"
-                lines={playLines as any}
-                h={240}
-                currentTime={tPlay.cur}
-                onSeek={(t) => {
-                  if (colorRef.current) colorRef.current.currentTime = t;
-                  if (playRef.current)  playRef.current.currentTime  = t;
-                }}
-              />
-            </Box>
-          )} */}
         </Box>
 
         {/* FULL combined timeline */}
-        {fullLines.length > 0 && (
+        {useMemo(() => {
+          const merged = [...(colorLines || []), ...(playLines || [])];
+          return merged.slice().sort((a, b) => toSec(a.time) - toSec(b.time));
+        }, [colorLines, playLines]).length > 0 && (
           <Box>
             <TranscriptTimeline
               title="Full Timeline (All Speakers)"
-              lines={fullLines as any}
+              lines={useMemo(() => {
+                const merged = [...(colorLines || []), ...(playLines || [])];
+                return merged.slice().sort((a, b) => toSec(a.time) - toSec(b.time));
+              }, [colorLines, playLines]) as any}
               h={300}
               currentTime={fullCurrent}
               onSeek={(t) => {
-                if (colorRef.current) colorRef.current.currentTime = t;
-                if (playRef.current)  playRef.current.currentTime  = t;
+                // Seek both tracks on the global timeline
+                seekGlobal(t, isPlaying);
               }}
             />
           </Box>
