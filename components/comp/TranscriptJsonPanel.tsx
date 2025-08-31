@@ -1,22 +1,11 @@
 "use client";
-import { Box, VStack, Text } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 
-type Line = {
-  time: string;
-  speaker: string;
-  text: string;
-};
+type Line = { time?: string; speaker?: string; text: string };
+type Props = { title?: string; lines: Line[]; h?: string | number };
 
-type Props = {
-  title?: string;
-  lines: Line[];
-  h?: string | number;
-};
-
-export default function TranscriptPanel({ title = "Transcript", lines, h = 500 }: Props) {
+export default function TranscriptJsonPanel({ title = "Transcript", lines, h = 500 }: Props) {
   return (
-
-    
     <Box
       bg="white"
       color="black"
@@ -32,8 +21,9 @@ export default function TranscriptPanel({ title = "Transcript", lines, h = 500 }
       h={h}
       overflow="hidden"
     >
-      <Text fontWeight={700} mb={2}>{title}</Text>
-
+      <Text fontWeight={700} mb={2}>
+        {title}
+      </Text>
       <Box
         as="pre"
         overflowY="auto"

@@ -1,23 +1,22 @@
 "use client";
-import {
-  Box,
-  VStack,
-  Text,
-  HStack,
-  Span,
-  Button,
-  FileUpload,
-} from "@chakra-ui/react";
-import { Upload } from "lucide-react";
-import { useRef, useState } from "react";
-
+import { Box, VStack, Text, HStack, Button, Textarea } from "@chakra-ui/react";
 import { HiUpload } from "react-icons/hi";
+import { useRef, useState } from "react";
 
 import InputBoxes from "./InputBoxes";
 import AudioData from "./AudioData";
 
-function Hero() {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+export default function Hero() {
+  const [transcript, setTranscript] = useState("");        // <-- LIFTED STATE
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFilePick = () => fileInputRef.current?.click();
+  const handleFileLoad: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const text = await f.text().catch(() => "");
+    setTranscript(text || "");
+  };
 
   return (
     <>
@@ -27,89 +26,70 @@ function Hero() {
         mb="50px"
         justifyContent="center"
         alignItems="start"
-        w={["100%", "100%", "100%", "100%", "100%", "100%"]}
-        h={"100%"}
+        w="100%"
+        h="100%"
         flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
         gap={["16px", "16px", "20px", "80px", "80px", "80px"]}
       >
         {/* Left: JSON input panel */}
-        <Box
-          h={["100%", "100%", "100%", "100%", "100%", "100%"]}
-          w={["100%", "100%", "100%", "100%", "100%", "100%"]}
-          overflow="hidden"
-          display="flex"
-          justifyContent="center"
-        >
-          <Box h="100%" w="100%" overflow="hidden">
+        <Box w="100%" overflow="hidden" display="flex" justifyContent="center">
+          <Box w="100%" overflow="hidden">
             {/* Header strip */}
             <HStack w="100%" justify="space-between" align="center">
-              <Box w={"100%"}>
-                <Text
-                  fontFamily="poppins"
-                  fontWeight={600}
-                  color="black"
-                  fontSize="20px"
-                >
+              <Box w="100%">
+                <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px">
                   Game Data
                 </Text>
               </Box>
 
-           <FileUpload.Root directory>
-  <FileUpload.HiddenInput />
-  <FileUpload.Trigger asChild>
-    <HStack justify="end" w="100%" align="end">
-      <Button
-        size="sm"
-        bg="white"         // 👈 grey background
-        color="black"         // 👈 text color
-        border="1px solid"   
-          borderRadius={"8px"}
-        borderColor="gray.400"
-        _hover={{ bg: "gray.300" }}
-        _active={{ bg: "gray.400" }}
-      >
-        <HiUpload /> Upload file
-      </Button>
-    </HStack>
-  </FileUpload.Trigger>
-  <FileUpload.List />
-</FileUpload.Root>
-
+              {/* Simple, reliable file upload (no extra deps) */}
+              <HStack justify="end" w="100%" align="end">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,.txt"
+                  onChange={handleFileLoad}
+                  style={{ display: "none" }}
+                />
+                <Button
+                  size="sm"
+                  bg="white"
+                  color="black"
+                  border="1px solid"
+                  borderRadius="8px"
+                  borderColor="gray.400"
+                  _hover={{ bg: "gray.300" }}
+                  _active={{ bg: "gray.400" }}
+                  onClick={handleFilePick}
+                  leftIcon={<HiUpload />}
+                >
+                  Upload file
+                </Button>
+              </HStack>
             </HStack>
 
             {/* Editor */}
-            <Box py={"10px"} h={"480px"} borderRadius={"24px"}>
-              <Box
-                borderRadius={"24px"}
-                as="textarea"
-                ref={textareaRef}
+            <Box py="10px" h="480px" borderRadius="24px">
+              <Textarea
+              borderRadius={"24px"}
                 aria-label="Paste JSON with timestamps"
+                value={transcript}
+                onChange={(e) => setTranscript(e.target.value)}   // <-- WIRE IT UP
                 placeholder={`[
-  {
-    "time": "00:00:03.250",
-    "speaker": "PlayByPlay",
-    "text": "Tip-off won by the Tigers."
-  },
-  {
-    "time": "00:00:07.900",
-    "speaker": "Color",
-    "text": "Great vertical from Okafor there."
-  }
+  { "time": "00:00:03.250", "speaker": "PlayByPlay", "text": "Tip-off won by the Tigers." },
+  { "time": "00:00:07.900", "speaker": "Color", "text": "Great vertical from Okafor there." }
 ]`}
                 spellCheck={false}
-                wrap="off"
                 resize="none"
-                fontFamily="mono"
+                fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
                 fontSize="13px"
                 lineHeight="1.6"
-                bg="black"
-                color="black"
-                border={" 1px solid #ccc"}
+                bg="gray.900"
+                color="white"                                  
+                border="1px solid #ccc"
                 p="12px"
-      h={"100%"}
+                h="100%"
                 w="100%"
-                overflow="auto"
-                sx={{ caretColor: "black", tabSize: 2, whiteSpace: "pre" }}
                 _placeholder={{ color: "gray.500" }}
                 _focus={{
                   borderColor: "black",
@@ -121,14 +101,11 @@ function Hero() {
           </Box>
         </Box>
 
-        <InputBoxes />
+        {/* Pass the text down so Generate can use it */}
+        <InputBoxes transcript={transcript} />
       </HStack>
 
       <AudioData />
-
-     
     </>
   );
 }
-
-export default Hero;

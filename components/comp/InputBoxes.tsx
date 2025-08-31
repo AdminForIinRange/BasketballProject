@@ -1,19 +1,19 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 import { ChevronDown } from "lucide-react";
 import { parseTranscriptJSON } from "@/lib/parseTranscript";
 import { publishAudioUrl } from "@/lib/audioBus";
-import TranscriptPanel from "./TranscriptJsonPanel";
 
-const InputBoxes = () => {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+type Props = { transcript: string };   // <-- accept the editor text
+
+export default function InputBoxes({ transcript }: Props) {
   const [speaking, setSpeaking] = useState(false);
 
   const handleGenerate = async () => {
     if (speaking) return;
     try {
-      const raw = textareaRef.current?.value ?? "";
+      const raw = transcript ?? "";                     // <-- read from props
       if (!raw.trim()) {
         alert("Paste a JSON transcript first.");
         return;
@@ -21,12 +21,11 @@ const InputBoxes = () => {
       const lines = parseTranscriptJSON(raw);
 
       setSpeaking(true);
-
-const res = await fetch("/api/mixTwoVoices", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ lines }),
-});
+      const res = await fetch("/api/playai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines }), // also send voices/seed if you add UI
+      });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -37,7 +36,6 @@ const res = await fetch("/api/mixTwoVoices", {
       const url = data?.audio?.url as string | undefined;
       if (!url) throw new Error("No audio URL returned");
 
-      // Tell the audio player to load + play
       publishAudioUrl(url);
     } catch (e: any) {
       console.error(e);
@@ -46,30 +44,21 @@ const res = await fetch("/api/mixTwoVoices", {
       setSpeaking(false);
     }
   };
+
   const optionSet = [
     { label: "Neutral", value: "neutral" },
     { label: "Energetic", value: "energetic" },
     { label: "Calm", value: "calm" },
   ];
-
   const modelOptions = [
-    { label: "PlayAI", value: "gpt-3.5" },
+    { label: "GPT-3.5", value: "gpt-3.5" },
     { label: "GPT-4", value: "gpt-4" },
     { label: "GPT-4 Turbo", value: "gpt-4-turbo" },
   ];
-
   const sections = [
     { title: "Choose Model", fields: ["Model"], options: modelOptions },
-    {
-      title: "Choose Play Commentator",
-      fields: ["Character", "Voice"],
-      options: optionSet,
-    },
-    {
-      title: "Choose Color Commentator",
-      fields: ["Character", "Voice"],
-      options: optionSet,
-    },
+    { title: "Choose Play Commentator", fields: ["Character", "Voice"], options: optionSet },
+    { title: "Choose Color Commentator", fields: ["Character", "Voice"], options: optionSet },
   ];
 
   const SelectField = ({
@@ -81,20 +70,10 @@ const res = await fetch("/api/mixTwoVoices", {
     id: string;
     options: { label: string; value: string }[];
   }) => (
-    <HStack
-      mt="14px"
-      textAlign="left"
-      color="black"
-      fontWeight={600}
-      fontSize="14px"
-      gap="10px"
-      align="center"
-    >
+    <HStack mt="14px" color="black" fontWeight={600} fontSize="14px" gap="10px" align="center">
       <Box as="label" htmlFor={id} minW="96px">
         {label}
       </Box>
-
-      {/* Wrapper so we can position the dropdown icon */}
       <Box position="relative" w="250px">
         <Box
           as="select"
@@ -106,15 +85,12 @@ const res = await fetch("/api/mixTwoVoices", {
           borderColor="gray.300"
           borderRadius="12px"
           p="10px"
-          pr="32px" // 👈 give padding-right so text doesn’t overlap icon
+          pr="32px"
           bg="white"
           color="black"
           fontWeight={300}
-          appearance="none" // 👈 hides the default native arrow
-          _focus={{
-            borderColor: "black",
-            boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
-          }}
+          appearance="none"
+          _focus={{ borderColor: "black", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)" }}
           _hover={{ borderColor: "gray.400" }}
         >
           {options.map((opt) => (
@@ -123,17 +99,7 @@ const res = await fetch("/api/mixTwoVoices", {
             </Box>
           ))}
         </Box>
-
-        {/* Custom dropdown icon (▼) */}
-        <Box
-          position="absolute"
-          right="20px"
-          top="50%"
-          transform="translateY(-50%)"
-          pointerEvents="none"
-          color="gray.500"
-          fontSize="14px"
-        >
+        <Box position="absolute" right="20px" top="50%" transform="translateY(-50%)" pointerEvents="none" color="gray.500" fontSize="14px">
           <ChevronDown />
         </Box>
       </Box>
@@ -141,42 +107,26 @@ const res = await fetch("/api/mixTwoVoices", {
   );
 
   return (
-    <>
-     <VStack 
-        justify="space-between"
-        align="stretch"
-        position="relative"
-        h="100%"
-        w="auto"
-                py="10px"
-      >
-        {sections.map((section, i) => (
-          <Box key={section.title + i}>
-            <Text
-                fontFamily="poppins"
-                fontWeight={600}
-                color="black"
-                fontSize="20px"
-            >
-              {section.title}
-            </Text>
+    <VStack
+      justify={["center", "center", "space-between", "space-between", "space-between", "space-between"]}
+      align={["center", "center", "stretch", "stretch", "stretch", "stretch"]}
+      position="relative"
+      h="100%"
+      w="100%"
+      py="10px"
+    >
+      {sections.map((section, i) => (
+        <Box key={section.title + i}>
+          <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px">
+            {section.title}
+          </Text>
+          {section.fields.map((label, idx) => (
+            <SelectField key={`section-${i}-field-${idx}`} id={`section-${i}-field-${idx}`} label={label} options={section.options} />
+          ))}
+        </Box>
+      ))}
 
-            {section.fields.map((label, idx) => {
-              const id = `section-${i}-field-${idx}`;
-              return (
-                <SelectField
-                  key={id}
-                  id={id}
-                  label={label}
-                  options={section.options}
-                />
-              );
-            })}
-          </Box>
-        ))}
-
-        {/* Generate */}
-<Box
+      <Box
         mt="15px"
         as="button"
         w="360px"
@@ -185,8 +135,8 @@ const res = await fetch("/api/mixTwoVoices", {
         color="white"
         p="16px"
         textAlign="center"
-        _hover={{ bg: speaking ? "gray.500" : "gray.800" }}
-        _active={{ bg: speaking ? "gray.500" : "gray.900" }}
+        _hover={{ bg: speaking ? "gray.500" : "orange.500" }}
+        _active={{ bg: speaking ? "gray.500" : "orange.600" }}
         fontFamily="poppins"
         fontWeight={700}
         cursor={speaking ? "not-allowed" : "pointer"}
@@ -200,14 +150,6 @@ const res = await fetch("/api/mixTwoVoices", {
           </Text>
         </HStack>
       </Box>
-
-        <textarea ref={textareaRef} style={{ display: "none" }} />
-
-
-       
-      </VStack>
-    </>
+    </VStack>
   );
-};
-
-export default InputBoxes;
+}

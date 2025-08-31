@@ -2,7 +2,11 @@ export type TranscriptItem = { time?: string; speaker?: string; text: string };
 
 export function parseTranscriptJSON(raw: string): TranscriptItem[] {
   let parsed: any;
-  try { parsed = JSON.parse(raw); } catch { throw new Error("Invalid JSON"); }
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Invalid JSON");
+  }
   if (!Array.isArray(parsed)) throw new Error("Root must be an array");
 
   return parsed.map((row, i) => {

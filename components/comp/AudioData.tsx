@@ -1,8 +1,8 @@
 "use client";
 import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import TranscriptJsonPanel from "./TranscriptJsonPanel";
-import TranscriptPanel from "./TranscriptModal";
+import TranscriptJsonPanel from "./TranscriptJsonPanel";     // <-- correct file
+import TranscriptTimeline from "./TranscriptTimeline";       // <-- rename from TranscriptPanel
 
 type TranscriptItem = { time?: string; speaker?: string; text: string };
 
@@ -13,7 +13,6 @@ const AudioData = () => {
   const [progressPct, setProgressPct] = useState(0);
   const [time, setTime] = useState({ cur: 0, dur: 0 });
 
-  // Listen for new audio URLs from InputBoxes
   useEffect(() => {
     const onAudioUrl = (e: Event) => {
       const detail = (e as CustomEvent).detail as { url: string };
@@ -23,7 +22,6 @@ const AudioData = () => {
     return () => window.removeEventListener("audio:url", onAudioUrl as EventListener);
   }, []);
 
-  // Load the new track
   useEffect(() => {
     if (!audioRef.current || !audioUrl) return;
     const a = audioRef.current;
@@ -32,11 +30,9 @@ const AudioData = () => {
     a.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
   }, [audioUrl]);
 
-  // Time / progress
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-
     const onTime = () => {
       const cur = a.currentTime || 0;
       const dur = a.duration || 0;
@@ -44,7 +40,6 @@ const AudioData = () => {
       setProgressPct(dur > 0 ? (cur / dur) * 100 : 0);
     };
     const onEnd = () => setIsPlaying(false);
-
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onTime);
     a.addEventListener("ended", onEnd);
@@ -72,15 +67,17 @@ const AudioData = () => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
     const sec = Math.floor(s % 60).toString().padStart(2, "0");
     return `${m}:${sec}`;
-    };
+  };
 
-  // Precompute nice spiky bars once
   const bars = useMemo(() => {
     const count = 170;
     return Array.from({ length: count }, (_, i) => {
       const t = i / count;
       const env = Math.sin(Math.PI * t);
-      const ripple = Math.sin(i * 0.55) * 0.35 + Math.sin(i * 0.13) * 0.2 + Math.sin(i * 0.03) * 0.1;
+      const ripple =
+        Math.sin(i * 0.55) * 0.35 +
+        Math.sin(i * 0.13) * 0.2 +
+        Math.sin(i * 0.03) * 0.1;
       const h = Math.max(0.08, env * (0.55 + ripple));
       return Math.round(h * 70) + 10;
     });
@@ -94,79 +91,22 @@ const AudioData = () => {
     </HStack>
   );
 
-  
-const sample: TranscriptItem[] = [
-  {
-    time: "00:00:03.250",
-    speaker: "PlayByPlay",
-    text: "And we’re underway, tip-off goes to the Tigers.",
-  },
-  {
-    time: "00:00:07.900",
-    speaker: "Color",
-    text: "Okafor really climbed the ladder for that one.",
-  },
-  {
-    time: "00:00:10.800",
-    speaker: "PlayByPlay",
-    text: "Johnson brings it across midcourt, looking to set things up.",
-  },
-  {
-    time: "00:00:13.300",
-    speaker: "PlayByPlay",
-    text: "He finds Okafor near the elbow.",
-  },
-  {
-    time: "00:00:14.200",
-    speaker: "Color",
-    text: "This is where he loves to operate, he’s so tough to guard there.",
-  },
-  {
-    time: "00:00:16.000",
-    speaker: "PlayByPlay",
-    text: "Okafor drives right, defender stays with him.",
-  },
-  {
-    time: "00:00:19.200",
-    speaker: "PlayByPlay",
-    text: "Floater in the lane… and it drops!",
-  },
-  {
-    time: "00:00:21.000",
-    speaker: "Color",
-    text: "Soft touch—he makes that look easy.",
-  },
-  {
-    time: "00:00:23.300",
-    speaker: "PlayByPlay",
-    text: "Tigers get a stop on the other end, pushing quickly.",
-  },
-  {
-    time: "00:00:25.200",
-    speaker: "PlayByPlay",
-    text: "Johnson leading the break, dishes back to Okafor.",
-  },
-  {
-    time: "00:00:27.100",
-    speaker: "Color",
-    text: "Great decision—kept the defense on its heels.",
-  },
-  {
-    time: "00:00:29.400",
-    speaker: "PlayByPlay",
-    text: "Okafor spins to the left hand, rises for the jumper…",
-  },
-  {
-    time: "00:00:36.300",
-    speaker: "PlayByPlay",
-    text: "And it’s good! Tigers extend their lead.",
-  },
-  {
-    time: "00:00:38.100",
-    speaker: "Color",
-    text: "That’s six quick points from Okafor—what a start.",
-  },
-];
+  const sample: TranscriptItem[] = [
+    { time: "00:00:03.250", speaker: "PlayByPlay", text: "And we’re underway, tip-off goes to the Tigers." },
+    { time: "00:00:07.900", speaker: "Color", text: "Okafor really climbed the ladder for that one." },
+    { time: "00:00:10.800", speaker: "PlayByPlay", text: "Johnson brings it across midcourt, looking to set things up." },
+    { time: "00:00:13.300", speaker: "PlayByPlay", text: "He finds Okafor near the elbow." },
+    { time: "00:00:14.200", speaker: "Color", text: "This is where he loves to operate, he’s so tough to guard there." },
+    { time: "00:00:16.000", speaker: "PlayByPlay", text: "Okafor drives right, defender stays with him." },
+    { time: "00:00:19.200", speaker: "PlayByPlay", text: "Floater in the lane… and it drops!" },
+    { time: "00:00:21.000", speaker: "Color", text: "Soft touch—he makes that look easy." },
+    { time: "00:00:23.300", speaker: "PlayByPlay", text: "Tigers get a stop on the other end, pushing quickly." },
+    { time: "00:00:25.200", speaker: "PlayByPlay", text: "Johnson leading the break, dishes back to Okafor." },
+    { time: "00:00:27.100", speaker: "Color", text: "Great decision—kept the defense on its heels." },
+    { time: "00:00:29.400", speaker: "PlayByPlay", text: "Okafor spins to the left hand, rises for the jumper…" },
+    { time: "00:00:36.300", speaker: "PlayByPlay", text: "And it’s good! Tigers extend their lead." },
+    { time: "00:00:38.100", speaker: "Color", text: "That’s six quick points from Okafor—what a start." },
+  ];
 
   return (
     <>
@@ -231,23 +171,20 @@ const sample: TranscriptItem[] = [
               </VStack>
             </HStack>
 
-            {/* Hidden audio element */}
             <audio ref={audioRef} preload="auto" />
-
-           
           </Box>
-           
         </HStack>
-         <VStack w="full">
+
+        <VStack w="full">
           <HStack
             justify="center"
             align="stretch"
-            w={["100%", "100%", "100%", "100%", "100%", "100%"]}
+            w="100%"
             flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
             spacing={4}
           >
             <TranscriptJsonPanel title="Raw Transcript" lines={sample} h={500} />
-            <TranscriptPanel title="Transcript Timeline " lines={sample} h={500} />
+            <TranscriptTimeline title="Transcript Timeline" lines={sample} h={500} />
           </HStack>
         </VStack>
       </VStack>
