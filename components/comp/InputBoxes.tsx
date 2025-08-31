@@ -1,7 +1,9 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 import { ChevronDown } from "lucide-react";
+import { parseTranscriptJSON } from "@/lib/parseTranscript";
+import { publishAudioUrl } from "@/lib/audioBus";
 
 const InputBoxes = () => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -15,20 +17,34 @@ const InputBoxes = () => {
         alert("Paste a JSON transcript first.");
         return;
       }
-      const items = parseTranscriptJSON(raw);
+      const lines = parseTranscriptJSON(raw);
 
       setSpeaking(true);
-      for (const item of items) {
-        await speakOnce(item.text);
+
+      const res = await fetch("/api/playai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines }), // you can also send custom voices/seed here
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || "TTS request failed");
       }
+
+      const data = await res.json();
+      const url = data?.audio?.url as string | undefined;
+      if (!url) throw new Error("No audio URL returned");
+
+      // Tell the audio player to load + play
+      publishAudioUrl(url);
     } catch (e: any) {
       console.error(e);
-      alert(`Couldn't play transcript:\n${e?.message ?? String(e)}`);
+      alert(`Couldn't generate audio:\n${e?.message ?? String(e)}`);
     } finally {
       setSpeaking(false);
     }
   };
-
   const optionSet = [
     { label: "Neutral", value: "neutral" },
     { label: "Energetic", value: "energetic" },
@@ -126,11 +142,11 @@ const InputBoxes = () => {
   return (
     <>
       <VStack 
-        justify="space-between"
+        justify={["center", "center", "space-between", "space-between", "space-between", "space-between"]}
         align="stretch"
         position="relative"
         h="100%"
-        w="auto"
+        w="100%"
                 py="10px"
       >
         {sections.map((section, i) => (
@@ -160,43 +176,31 @@ const InputBoxes = () => {
 
         {/* Generate */}
         <Box
-          mt="15px"
-          as="button"
-          w="360px"
-          borderRadius="16px"
-          bg={speaking ? "gray.500" : "orange.400"}
-          color="white"
-          p="16px"
-          textAlign="center"
-          _hover={{ bg: speaking ? "gray.500" : "gray.800" }}
-          _active={{ bg: speaking ? "gray.500" : "gray.900" }}
-          transition="background-color 0.2s ease, transform 0.05s ease"
-          fontFamily="poppins"
-          fontWeight={700}
-          cursor={speaking ? "not-allowed" : "pointer"}
-          aria-disabled={speaking}
-          onMouseDown={(e) => {
-            if (speaking) return;
-            (e.currentTarget as HTMLDivElement).style.transform =
-              "translateY(1px)";
-          }}
-          onMouseUp={(e) => {
-            (e.currentTarget as HTMLDivElement).style.transform =
-              "translateY(0)";
-          }}
-          onClick={handleGenerate}
-          disabled={speaking}
-        >
-          <HStack gap="10px" justify="center">
-            <Text
-              fontSize={["18px", "18px", "20px"]}
-              lineHeight="1.1"
-              color="white"
-            >
-              {speaking ? "Speaking…" : "Generate"}
-            </Text>
-          </HStack>
-        </Box>
+        mt="15px"
+        as="button"
+        w="360px"
+        borderRadius="16px"
+        bg={speaking ? "gray.500" : "orange.400"}
+        color="white"
+        p="16px"
+        textAlign="center"
+        _hover={{ bg: speaking ? "gray.500" : "gray.800" }}
+        _active={{ bg: speaking ? "gray.500" : "gray.900" }}
+        fontFamily="poppins"
+        fontWeight={700}
+        cursor={speaking ? "not-allowed" : "pointer"}
+        aria-disabled={speaking}
+        onClick={handleGenerate}
+        disabled={speaking}
+      >
+        <HStack gap="10px" justify="center">
+          <Text fontSize={["18px", "18px", "20px"]} lineHeight="1.1">
+            {speaking ? "Generating…" : "Generate"}
+          </Text>
+        </HStack>
+      </Box>
+
+        <textarea ref={textareaRef} style={{ display: "none" }} />
       </VStack>
     </>
   );

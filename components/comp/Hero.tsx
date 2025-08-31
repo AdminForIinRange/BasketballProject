@@ -30,7 +30,7 @@ function Hero() {
         w={["100%", "100%", "100%", "100%", "100%", "100%"]}
         h={"100%"}
         flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
-        gap={["16px", "16px", "20px", "80px", "80px", "80px"]}
+        gap={["80px", "80px", "80px", "80px", "80px", "80px"]}
       >
         {/* Left: JSON input panel */}
         <Box
@@ -54,47 +54,41 @@ function Hero() {
                 </Text>
               </Box>
 
-           <FileUpload.Root directory>
-  <FileUpload.HiddenInput />
-  <FileUpload.Trigger asChild>
-    <HStack justify="end" w="100%" align="end">
-      <Button
-        size="sm"
-        bg="white"         // 👈 grey background
-        color="black"         // 👈 text color
-        border="1px solid"   
-          borderRadius={"8px"}
-        borderColor="gray.400"
-        _hover={{ bg: "gray.300" }}
-        _active={{ bg: "gray.400" }}
-      >
-        <HiUpload /> Upload file
-      </Button>
-    </HStack>
-  </FileUpload.Trigger>
-  <FileUpload.List />
-</FileUpload.Root>
-
+              <FileUpload.Root directory>
+                <FileUpload.HiddenInput />
+                <FileUpload.Trigger asChild>
+                  <HStack justify="end" w="100%" align="end">
+                    <Button
+                      size="sm"
+                      bg="white" // 👈 grey background
+                      color="black" // 👈 text color
+                      border="1px solid"
+                      borderRadius={"8px"}
+                      borderColor="gray.400"
+                      _hover={{ bg: "gray.300" }}
+                      _active={{ bg: "gray.400" }}
+                      fontFamily="poppins"
+                      fontWeight={600}
+                      fontSize="14px"
+                    >
+                      <HiUpload /> Upload file
+                    </Button>
+                  </HStack>
+                </FileUpload.Trigger>
+                <FileUpload.List />
+              </FileUpload.Root>
             </HStack>
 
             {/* Editor */}
-            <Box py={"10px"} h={"480px"} borderRadius={"24px"}>
+            <Box py={"10px"} w={"100%"} h={"480px"} borderRadius={"24px"}>
               <Box
                 borderRadius={"24px"}
                 as="textarea"
                 ref={textareaRef}
                 aria-label="Paste JSON with timestamps"
                 placeholder={`[
-  {
-    "time": "00:00:03.250",
-    "speaker": "PlayByPlay",
-    "text": "Tip-off won by the Tigers."
-  },
-  {
-    "time": "00:00:07.900",
-    "speaker": "Color",
-    "text": "Great vertical from Okafor there."
-  }
+  { "time": "00:00:03.250", "speaker": "PlayByPlay", "text": "Tip-off won by the Tigers." },
+  { "time": "00:00:07.900", "speaker": "Color", "text": "Great vertical from Okafor there." }
 ]`}
                 spellCheck={false}
                 wrap="off"
@@ -103,13 +97,17 @@ function Hero() {
                 fontSize="13px"
                 lineHeight="1.6"
                 bg="black"
-                color="black"
-                border={" 1px solid #ccc"}
+                color="gray.400" // <-- changed here
+                border={"1px solid #ccc"}
                 p="12px"
-      h={"100%"}
+                h={"100%"}
                 w="100%"
                 overflow="auto"
-                sx={{ caretColor: "black", tabSize: 2, whiteSpace: "pre" }}
+                sx={{
+                  caretColor: "gray",
+                  tabSize: 2,
+                  whiteSpace: "pre",
+                }}
                 _placeholder={{ color: "gray.500" }}
                 _focus={{
                   borderColor: "black",
@@ -125,8 +123,6 @@ function Hero() {
       </HStack>
 
       <AudioData />
-
-     
     </>
   );
 }
