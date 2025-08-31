@@ -112,7 +112,7 @@ export default function InputBoxes({ transcript }: Props) {
       align={["center", "center", "stretch", "stretch", "stretch", "stretch"]}
       position="relative"
       h="100%"
-      w="100%"
+      w="auto"
       py="10px"
     >
       {sections.map((section, i) => (
