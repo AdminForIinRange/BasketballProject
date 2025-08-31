@@ -17,7 +17,7 @@ const fmt = (s: number) => {
   return `${m}:${sec}`;
 };
 
-// Parse "HH:MM:SS(.mmm)" or "MM:SS(.mmm)" -> seconds
+// HH:MM:SS(.mmm) or MM:SS(.mmm) -> seconds
 const toSec = (t?: string) => {
   if (!t) return 0;
   const parts = t.split(":");
@@ -34,7 +34,7 @@ const toSec = (t?: string) => {
   return 0;
 };
 
-/* ========= Waveform (same look as your AudioData) ========= */
+/* ========= Waveform (no extra libs) ========= */
 function WaveformCanvas({
   audioEl,
   src,
@@ -177,7 +177,7 @@ function WaveformCanvas({
   const onUp: React.PointerEventHandler<HTMLCanvasElement> = () => { draggingRef.current = false; };
 
   return (
-    <Box w="100%" h={`${height}px`} borderWidth="1px" borderColor="gray.200" borderRadius="12px" overflow="hidden" bg="white">
+    <Box w="100%" h={`${height}px`} borderWidth="1px" borderColor="gray.2 00" borderRadius="12px" overflow="hidden" bg="white">
       <canvas
         ref={canvasRef}
         style={{ width: "100%", height: "100%", display: "block", cursor: "pointer", touchAction: "none" }}
@@ -195,19 +195,42 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
   const [colorUrl, setColorUrl] = useState<string | null>(null);
   const [playUrl,  setPlayUrl]  = useState<string | null>(null);
 
-  // sequence guards when loading new URLs
+  // sequence guards for loads
   const colorSeq = useRef(0); const playSeq = useRef(0);
 
-  // timers to delay starts when global time < offset
+  // delayed start timers
   const colorDelay = useRef<number | null>(null);
   const playDelay  = useRef<number | null>(null);
 
-  // UI states
+  // UI state
   const [isPlaying, setIsPlaying] = useState(false);
   const [tColor, setTColor] = useState({ cur: 0, dur: 0 });
   const [tPlay,  setTPlay]  = useState({ cur: 0, dur: 0 });
 
-  // receive both urls from bus
+  // ---------- memoized data (TOP-LEVEL ONLY) ----------
+  const offsetColor = useMemo(() => {
+    if (!colorLines || !colorLines.length) return 0;
+    return Math.min(...colorLines.map((l) => toSec(l.time)));
+  }, [colorLines]);
+
+  const offsetPlay = useMemo(() => {
+    if (!playLines || !playLines.length) return 0;
+    return Math.min(...playLines.map((l) => toSec(l.time)));
+  }, [playLines]);
+
+  const fullLines: Line[] = useMemo(() => {
+    const merged = [...(colorLines || []), ...(playLines || [])];
+    return merged.slice().sort((a, b) => toSec(a.time) - toSec(b.time));
+  }, [colorLines, playLines]);
+
+  // global transcript time (based on elements + offsets)
+  const globalTime = Math.max(
+    (tColor.cur || 0) + offsetColor,
+    (tPlay.cur  || 0) + offsetPlay
+  );
+  const fullCurrent = globalTime;
+
+  // ---------- effects (always in same order) ----------
   useEffect(() => {
     const onDual = (e: Event) => {
       const { playUrl, colorUrl } = (e as CustomEvent).detail || {};
@@ -218,7 +241,6 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
     return () => window.removeEventListener("audio:dual", onDual as EventListener);
   }, []);
 
-  // safe loader: color
   useEffect(() => {
     const a = colorRef.current;
     if (!a || !colorUrl) return;
@@ -230,7 +252,6 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
     return () => a.removeEventListener("canplay", onCanPlay);
   }, [colorUrl]);
 
-  // safe loader: play
   useEffect(() => {
     const a = playRef.current;
     if (!a || !playUrl) return;
@@ -242,7 +263,6 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
     return () => a.removeEventListener("canplay", onCanPlay);
   }, [playUrl]);
 
-  // clock updates from elements
   useEffect(() => {
     const ca = colorRef.current, pa = playRef.current;
     if (!ca || !pa) return;
@@ -255,39 +275,18 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
                    pa.removeEventListener("timeupdate", onP); pa.removeEventListener("loadedmetadata", onP); pa.removeEventListener("ended", onEnd); };
   }, [colorUrl, playUrl]);
 
-  // ======== Transcript alignment ========
-
-  // Offsets: when each track should start on the global transcript clock
-  const offsetColor = useMemo(() => {
-    if (!colorLines || !colorLines.length) return 0;
-    return Math.min(...colorLines.map((l) => toSec(l.time)));
-  }, [colorLines]);
-
-  const offsetPlay = useMemo(() => {
-    if (!playLines || !playLines.length) return 0;
-    return Math.min(...playLines.map((l) => toSec(l.time)));
-  }, [playLines]);
-
-  // Global transcript time we display & use for the FULL timeline:
-  // (furthest reached among both tracks + their offsets)
-  const globalTime = Math.max(
-    (tColor.cur || 0) + offsetColor,
-    (tPlay.cur  || 0) + offsetPlay
-  );
-
-  // helper: clear any delayed start timers
+  // ---------- helpers ----------
   const clearDelays = () => {
     if (colorDelay.current) { clearTimeout(colorDelay.current); colorDelay.current = null; }
     if (playDelay.current)  { clearTimeout(playDelay.current);  playDelay.current  = null; }
   };
 
-  // Set both elements to a desired *global* transcript time (seconds)
+  // map a global transcript time -> each audio element, and play/pause as needed
   const seekGlobal = (T: number, keepPlaying: boolean) => {
     const ca = colorRef.current, pa = playRef.current;
     if (!ca || !pa) return;
     clearDelays();
 
-    // Track-local times for that global transcript time
     const tc = Math.max(0, T - offsetColor);
     const tp = Math.max(0, T - offsetPlay);
 
@@ -296,25 +295,19 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
 
     if (!keepPlaying) {
       ca.pause(); pa.pause();
-      setIsPlaying(false);
       return;
     }
 
-    // If a track hasn't reached its start yet (T < offset), delay its play
     const needDelayC = T < offsetColor;
     const needDelayP = T < offsetPlay;
 
-    // Start immediately those that are ready
     const plays: Promise<any>[] = [];
-    if (!needDelayC) plays.push(ca.play().catch(() => {}));
-    else ca.pause();
-    if (!needDelayP) plays.push(pa.play().catch(() => {}));
-    else pa.pause();
+    if (!needDelayC) plays.push(ca.play().catch(() => {})); else ca.pause();
+    if (!needDelayP) plays.push(pa.play().catch(() => {})); else pa.pause();
 
-    // Schedule delayed starts to honor offsets
     if (needDelayC) {
       colorDelay.current = window.setTimeout(() => {
-        ca.currentTime = 0; // starts from the beginning of its audio when it "enters" the timeline
+        ca.currentTime = 0;
         ca.play().catch(() => {});
       }, Math.round((offsetColor - T) * 1000));
     }
@@ -324,38 +317,22 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
         pa.play().catch(() => {});
       }, Math.round((offsetPlay - T) * 1000));
     }
-
-    Promise.allSettled(plays).finally(() => setIsPlaying(true));
   };
 
-  // controls
-  const masterPlay = () => {
-    // Start from *current* global transcript time
-    seekGlobal(globalTime, true);
-  };
-  const masterPause = () => {
-    clearDelays();
-    colorRef.current?.pause();
-    playRef.current?.pause();
-    setIsPlaying(false);
-  };
-  const masterToggle = () => { isPlaying ? masterPause() : masterPlay(); };
+  // ---------- controls ----------
+  const [playingFlag, setPlayingFlag] = useState(false); // local flag to stabilize setState order
+  useEffect(() => { setIsPlaying(playingFlag); }, [playingFlag]);
 
-  const masterSeek = (delta: number) => {
-    const T = Math.max(0, globalTime + delta);
-    const keepPlaying = isPlaying;
-    seekGlobal(T, keepPlaying);
-  };
+  const masterPlay = () => { seekGlobal(globalTime, true); setPlayingFlag(true); };
+  const masterPause = () => { clearDelays(); colorRef.current?.pause(); playRef.current?.pause(); setPlayingFlag(false); };
+  const masterToggle = () => { (isPlaying ? masterPause : masterPlay)(); };
+  const masterSeek = (delta: number) => { seekGlobal(Math.max(0, globalTime + delta), isPlaying); };
   const masterRestart = () => {
-    // Jump to the earliest offset among tracks
     const T0 = Math.min(offsetColor || 0, offsetPlay || 0, 0);
     seekGlobal(T0, isPlaying);
   };
 
   const bothReady = Boolean(colorUrl || playUrl);
-
-  // FULL timeline uses the global transcript clock
-  const fullCurrent = globalTime;
 
   return (
     <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
@@ -397,23 +374,14 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
         </Box>
 
         {/* FULL combined timeline */}
-        {useMemo(() => {
-          const merged = [...(colorLines || []), ...(playLines || [])];
-          return merged.slice().sort((a, b) => toSec(a.time) - toSec(b.time));
-        }, [colorLines, playLines]).length > 0 && (
+        {fullLines.length > 0 && (
           <Box>
             <TranscriptTimeline
               title="Full Timeline (All Speakers)"
-              lines={useMemo(() => {
-                const merged = [...(colorLines || []), ...(playLines || [])];
-                return merged.slice().sort((a, b) => toSec(a.time) - toSec(b.time));
-              }, [colorLines, playLines]) as any}
+              lines={fullLines as any}
               h={300}
               currentTime={fullCurrent}
-              onSeek={(t) => {
-                // Seek both tracks on the global timeline
-                seekGlobal(t, isPlaying);
-              }}
+              onSeek={(t) => { seekGlobal(t, isPlaying); }}
             />
           </Box>
         )}
