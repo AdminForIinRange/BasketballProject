@@ -42,6 +42,7 @@ function WaveformCanvas({
   baseColor = "#CBD5E0",
   progressColor = "#ED8936",
   bg = "#FFFFFF",
+  enableSeek = true,
 }: {
   audioEl: HTMLAudioElement | null;
   src: string | null;
@@ -49,6 +50,7 @@ function WaveformCanvas({
   baseColor?: string;
   progressColor?: string;
   bg?: string;
+  enableSeek?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const peaksRef = useRef<number[] | null>(null);
@@ -166,26 +168,31 @@ function WaveformCanvas({
     return pct * audioEl.duration;
   };
   const onDown: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
-    if (!audioEl) return; draggingRef.current = true;
+    if (!enableSeek || !audioEl) return; 
+    draggingRef.current = true;
     (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
     audioEl.currentTime = timeFromX(e.clientX);
   };
   const onMove: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
-    if (!draggingRef.current || !audioEl) return;
+    if (!enableSeek || !draggingRef.current || !audioEl) return;
     audioEl.currentTime = timeFromX(e.clientX);
   };
   const onUp: React.PointerEventHandler<HTMLCanvasElement> = () => { draggingRef.current = false; };
 
   return (
-    <Box w="100%" h={`${height}px`} borderWidth="1px" borderColor="gray.2 00" borderRadius="12px" overflow="hidden" bg="white">
+    <Box w="100%" h={`${height}px`} borderWidth="1px" borderColor="gray.200" borderRadius="12px" overflow="hidden" bg="white">
       <canvas
         ref={canvasRef}
-        style={{ width: "100%", height: "100%", display: "block", cursor: "pointer", touchAction: "none" }}
+        style={{ width: "100%", height: "100%", display: "block", cursor: enableSeek ? "pointer" : "default", touchAction: "none" }}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
       />
     </Box>
   );
 }
+
+/* ========= NEW: Simple single-track player (non-overlap) ========= */
+/* ========= UPDATED: Simple single-track player (non-overlap) ========= */
+
 
 /* ========= Main: dual players + offsets aligned to transcript ========= */
 export default function AudioOverlap({ colorLines = [], playLines = [] }: Props) {
@@ -207,17 +214,15 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
   const [tColor, setTColor] = useState({ cur: 0, dur: 0 });
   const [tPlay,  setTPlay]  = useState({ cur: 0, dur: 0 });
 
-  // ---------- memoized data (TOP-LEVEL ONLY) ----------
+  // ---------- memoized data ----------
   const offsetColor = useMemo(() => {
     if (!colorLines || !colorLines.length) return 0;
     return Math.min(...colorLines.map((l) => toSec(l.time)));
   }, [colorLines]);
-
   const offsetPlay = useMemo(() => {
     if (!playLines || !playLines.length) return 0;
     return Math.min(...playLines.map((l) => toSec(l.time)));
   }, [playLines]);
-
   const fullLines: Line[] = useMemo(() => {
     const merged = [...(colorLines || []), ...(playLines || [])];
     return merged.slice().sort((a, b) => toSec(a.time) - toSec(b.time));
@@ -230,7 +235,7 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
   );
   const fullCurrent = globalTime;
 
-  // ---------- effects (always in same order) ----------
+  // ---------- effects ----------
   useEffect(() => {
     const onDual = (e: Event) => {
       const { playUrl, colorUrl } = (e as CustomEvent).detail || {};
@@ -320,7 +325,7 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
   };
 
   // ---------- controls ----------
-  const [playingFlag, setPlayingFlag] = useState(false); // local flag to stabilize setState order
+  const [playingFlag, setPlayingFlag] = useState(false);
   useEffect(() => { setIsPlaying(playingFlag); }, [playingFlag]);
 
   const masterPlay = () => { seekGlobal(globalTime, true); setPlayingFlag(true); };
@@ -336,8 +341,11 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
 
   return (
     <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
+
+
+      {/* Existing dual overlap section */}
       <Box w="100%">
-        <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px">
+        <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px" mt="10px">
           Dual Commentary — Overlap (Aligned to Transcript)
         </Text>
       </Box>
@@ -356,8 +364,8 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
         {/* Color track */}
         <Box mb={4}>
           <HStack mb={2} spacing={3}>
-            <Text fontWeight={700}>Color (offset {fmt(offsetColor)})</Text>
-            <Button as="a" href={colorUrl ?? undefined} download isDisabled={!colorUrl}>Download</Button>
+         
+           
           </HStack>
           <WaveformCanvas audioEl={colorRef.current} src={colorUrl} height={84} baseColor="#D6BCFA" progressColor="#805AD5" />
           <audio ref={colorRef} preload="auto" />
@@ -366,8 +374,8 @@ export default function AudioOverlap({ colorLines = [], playLines = [] }: Props)
         {/* Play-by-Play track */}
         <Box mb={6}>
           <HStack mb={2} spacing={3}>
-            <Text fontWeight={700}>PlayByPlay (offset {fmt(offsetPlay)})</Text>
-            <Button as="a" href={playUrl ?? undefined} download isDisabled={!playUrl}>Download</Button>
+          
+          
           </HStack>
           <WaveformCanvas audioEl={playRef.current} src={playUrl} height={84} baseColor="#90CDF4" progressColor="#3182CE" />
           <audio ref={playRef} preload="auto" />

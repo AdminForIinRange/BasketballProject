@@ -135,6 +135,7 @@ export default function Hero() {
                   boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
                   outline: "none",
                 }}
+                
               />
             </Box>
           </Box>
@@ -145,8 +146,9 @@ export default function Hero() {
       </HStack>
 
       {/* Dual player with synced timelines */}
-      <AudioOverlap colorLines={colorLines} playLines={playLines} />
 
+      <AudioOverlap colorLines={colorLines} playLines={playLines} />
+      <AudioData />
       {/* Raw JSON preview */}
       <VStack mt="50px" w="full" px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
         <HStack
@@ -156,16 +158,9 @@ export default function Hero() {
           flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
           spacing={4}
         >
-          <TranscriptTimelineBoth
-            title="Transcript"
-            lines={colorLines as any}
-            h={500}
-          />
-          <TranscriptJsonPanel
-            title="Raw Transcript"
-            lines={parsedLines as any}
-            h={500}
-          />
+        
+
+
         </HStack>
       </VStack>
 

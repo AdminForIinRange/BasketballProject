@@ -229,6 +229,7 @@ function WaveformCanvas({
       borderRadius="12px"
       overflow="hidden"
       bg="white"
+
     >
       <canvas
         ref={canvasRef}
