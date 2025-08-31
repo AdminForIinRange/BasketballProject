@@ -1,44 +1,288 @@
 "use client";
-import { Box, VStack, Text, HStack } from "@chakra-ui/react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import TranscriptJsonPanel from "./TranscriptJsonPanel";     // <-- correct file
-import TranscriptTimeline from "./TranscriptTimeline";       // <-- rename from TranscriptPanel
+import { Box, VStack, Text, HStack, Button, Textarea } from "@chakra-ui/react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 
+/* =========================================================
+ * WaveformCanvas (no libs): decodes audio -> draws real peaks
+ * - Progress overlay in accent color
+ * - Click & drag to seek
+ * - Resizes to container
+ * =======================================================*/
+function WaveformCanvas({
+  audioEl,
+  src,
+  height = 112,
+  baseColor = "#CBD5E0",     // gray.300
+  progressColor = "#ED8936", // orange.400
+  bg = "#FFFFFF",
+  onReady,
+}: {
+  audioEl: HTMLAudioElement | null;
+  src: string | null;
+  height?: number;
+  baseColor?: string;
+  progressColor?: string;
+  bg?: string;
+  onReady?: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const peaksRef = useRef<number[] | null>(null);
+  const draggingRef = useRef(false);
+
+  const decodeToPeaks = useCallback(async () => {
+    peaksRef.current = null;
+    if (!src || !canvasRef.current) return;
+
+    try {
+      const res = await fetch(src, { mode: "cors" });
+      const buf = await res.arrayBuffer();
+      const ACtor = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const ctx = new ACtor();
+      const decoded: AudioBuffer = await new Promise((resolve, reject) => {
+        // Safari requires callback form sometimes
+        ctx.decodeAudioData(buf.slice(0), resolve, reject);
+      });
+
+      const channel = decoded.getChannelData(0); // mono is fine
+      const width = canvasRef.current.clientWidth || 600;
+      const samplesPerBucket = Math.max(1, Math.floor(channel.length / width));
+      const peaks = new Array(Math.floor(channel.length / samplesPerBucket));
+
+      for (let i = 0, p = 0; i < channel.length; i += samplesPerBucket, p++) {
+        let min = 1.0, max = -1.0;
+        for (let j = 0; j < samplesPerBucket && i + j < channel.length; j++) {
+          const v = channel[i + j];
+          if (v < min) min = v;
+          if (v > max) max = v;
+        }
+        peaks[p] = Math.max(Math.abs(min), Math.abs(max)); // 0..1
+      }
+
+      peaksRef.current = peaks;
+      onReady?.();
+      ctx.close();
+    } catch (e) {
+      console.warn("Waveform decode failed:", e);
+      peaksRef.current = []; // draw baseline instead of crashing
+      onReady?.();
+    }
+  }, [src, onReady]);
+
+  useEffect(() => { decodeToPeaks(); }, [decodeToPeaks]);
+
+  const repaint = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth;
+    const heightPx = height;
+
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(heightPx * dpr);
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // background
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, heightPx);
+
+    const mid = Math.floor(heightPx / 2);
+    const peaks = peaksRef.current;
+
+    // base waveform
+    ctx.strokeStyle = baseColor;
+    ctx.lineWidth = 1;
+    if (peaks && peaks.length) {
+      const step = Math.max(1, Math.floor(peaks.length / width));
+      for (let x = 0, i = 0; x < width; x++, i += step) {
+        const amp = peaks[Math.min(i, peaks.length - 1)] ?? 0;
+        const h = Math.max(2, Math.round(amp * (heightPx * 0.9) / 2));
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, mid - h);
+        ctx.lineTo(x + 0.5, mid + h);
+        ctx.stroke();
+      }
+    } else {
+      // baseline while loading
+      ctx.beginPath();
+      ctx.moveTo(0, mid + 0.5);
+      ctx.lineTo(width, mid + 0.5);
+      ctx.stroke();
+    }
+
+    // progress overlay
+    if (audioEl && audioEl.duration > 0) {
+      const progressX = Math.round((audioEl.currentTime / audioEl.duration) * width);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, progressX, heightPx);
+      ctx.clip();
+
+      ctx.strokeStyle = progressColor;
+      if (peaks && peaks.length) {
+        const step = Math.max(1, Math.floor(peaks.length / width));
+        for (let x = 0, i = 0; x < progressX; x++, i += step) {
+          const amp = peaks[Math.min(i, peaks.length - 1)] ?? 0;
+          const h = Math.max(2, Math.round(amp * (heightPx * 0.9) / 2));
+          ctx.beginPath();
+          ctx.moveTo(x + 0.5, mid - h);
+          ctx.lineTo(x + 0.5, mid + h);
+          ctx.stroke();
+        }
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(0, mid + 0.5);
+        ctx.lineTo(progressX, mid + 0.5);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // playhead
+      ctx.strokeStyle = progressColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(progressX + 0.5, 0);
+      ctx.lineTo(progressX + 0.5, heightPx);
+      ctx.stroke();
+    }
+  }, [audioEl, height, baseColor, progressColor, bg]);
+
+  // animation repaint
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => { repaint(); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [repaint]);
+
+  // resize repaint
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ro = new ResizeObserver(() => repaint());
+    ro.observe(canvas);
+    return () => ro.disconnect();
+  }, [repaint]);
+
+  // seek by pointer
+  const timeFromClientX = (clientX: number) => {
+    if (!audioEl || !canvasRef.current || !audioEl.duration) return 0;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const pct = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    return pct * audioEl.duration;
+  };
+
+  const onPointerDown: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
+    if (!audioEl) return;
+    draggingRef.current = true;
+    (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
+    audioEl.currentTime = timeFromClientX(e.clientX);
+  };
+  const onPointerMove: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
+    if (!draggingRef.current || !audioEl) return;
+    audioEl.currentTime = timeFromClientX(e.clientX);
+  };
+  const onPointerUp: React.PointerEventHandler<HTMLCanvasElement> = () => {
+    draggingRef.current = false;
+  };
+
+  return (
+    <Box
+      w="100%"
+      h={`${height}px`}
+      borderWidth="1px"
+      borderColor="gray.200"
+      borderRadius="14px"
+      overflow="hidden"
+      bg="white"
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", display: "block", touchAction: "none", cursor: "pointer" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      />
+    </Box>
+  );
+}
+
+/* ================= helpers ================= */
+const format = (s: number) => {
+  if (!Number.isFinite(s)) return "00:00";
+  const m = Math.floor(s / 60).toString().padStart(2, "0");
+  const sec = Math.floor(s % 60).toString().padStart(2, "0");
+  return `${m}:${sec}`;
+};
+
+/* ================= main ================= */
 type TranscriptItem = { time?: string; speaker?: string; text: string };
 
-const AudioData = () => {
+export default function AudioData() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // sequential-load guards to stop "play() interrupted by new load request"
+  const loadSeq = useRef(0);
+  const lastUrlRef = useRef<string | null>(null);
+
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progressPct, setProgressPct] = useState(0);
   const [time, setTime] = useState({ cur: 0, dur: 0 });
 
+  /* ---- receive URL from bus ---- */
   useEffect(() => {
     const onAudioUrl = (e: Event) => {
       const detail = (e as CustomEvent).detail as { url: string };
+      if (!detail?.url) return;
+      if (detail.url === lastUrlRef.current) return; // ignore duplicates
+      lastUrlRef.current = detail.url;
       setAudioUrl(detail.url);
     };
     window.addEventListener("audio:url", onAudioUrl as EventListener);
     return () => window.removeEventListener("audio:url", onAudioUrl as EventListener);
   }, []);
 
+  /* ---- sequenced load + canplay gate ---- */
   useEffect(() => {
-    if (!audioRef.current || !audioUrl) return;
     const a = audioRef.current;
-    a.src = audioUrl;
+    if (!a || !audioUrl) return;
+
+    const mySeq = ++loadSeq.current;  // claim this load turn
+    a.pause();
+    setIsPlaying(false);
+
+    a.crossOrigin = "anonymous";
+    const url = audioUrl;
+
+    const onCanPlay = async () => {
+      if (loadSeq.current !== mySeq) return; // stale load, bail
+      try {
+        await a.play();
+        if (loadSeq.current !== mySeq) return; // stale after await
+        setIsPlaying(true);
+      } catch {
+        setIsPlaying(!a.paused);
+      }
+    };
+
+    a.addEventListener("canplay", onCanPlay, { once: true });
+    a.src = url;
     a.load();
-    a.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+
+    return () => {
+      a.removeEventListener("canplay", onCanPlay);
+    };
   }, [audioUrl]);
 
+  /* ---- time & end ---- */
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => {
-      const cur = a.currentTime || 0;
-      const dur = a.duration || 0;
-      setTime({ cur, dur });
-      setProgressPct(dur > 0 ? (cur / dur) * 100 : 0);
-    };
+    const onTime = () => setTime({ cur: a.currentTime || 0, dur: a.duration || 0 });
     const onEnd = () => setIsPlaying(false);
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onTime);
@@ -50,146 +294,105 @@ const AudioData = () => {
     };
   }, []);
 
+  /* ---- controls ---- */
   const togglePlay = async () => {
     const a = audioRef.current;
     if (!a) return;
-    if (a.paused) {
-      await a.play();
-      setIsPlaying(true);
-    } else {
-      a.pause();
-      setIsPlaying(false);
+    try {
+      if (a.paused) {
+        await a.play();
+        setIsPlaying(true);
+      } else {
+        a.pause();
+        setIsPlaying(false);
+      }
+    } catch {
+      // If a new load interrupts play(), ignore the error and sync UI to element state
+      setIsPlaying(!a.paused);
     }
   };
 
-  const format = (s: number) => {
-    if (!isFinite(s)) return "00:00";
-    const m = Math.floor(s / 60).toString().padStart(2, "0");
-    const sec = Math.floor(s % 60).toString().padStart(2, "0");
-    return `${m}:${sec}`;
+  const seek = (delta: number) => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.currentTime = Math.max(0, Math.min(a.duration || 0, (a.currentTime || 0) + delta));
   };
 
-  const bars = useMemo(() => {
-    const count = 170;
-    return Array.from({ length: count }, (_, i) => {
-      const t = i / count;
-      const env = Math.sin(Math.PI * t);
-      const ripple =
-        Math.sin(i * 0.55) * 0.35 +
-        Math.sin(i * 0.13) * 0.2 +
-        Math.sin(i * 0.03) * 0.1;
-      const h = Math.max(0.08, env * (0.55 + ripple));
-      return Math.round(h * 70) + 10;
-    });
-  }, []);
-
-  const BarRow = ({ color }: { color: string }) => (
-    <HStack spacing="3px" align="end" position="absolute" top="50%" transform="translateY(-50%)" pl="4px" pr="4px">
-      {bars.map((h, i) => (
-        <Box key={`${color}-${i}`} w="3px" h={`${h}px`} bg={color} borderRadius="2px" />
-      ))}
-    </HStack>
-  );
-
+  /* ---- example transcript block (optional) ---- */
   const sample: TranscriptItem[] = [
     { time: "00:00:03.250", speaker: "PlayByPlay", text: "And we’re underway, tip-off goes to the Tigers." },
     { time: "00:00:07.900", speaker: "Color", text: "Okafor really climbed the ladder for that one." },
-    { time: "00:00:10.800", speaker: "PlayByPlay", text: "Johnson brings it across midcourt, looking to set things up." },
-    { time: "00:00:13.300", speaker: "PlayByPlay", text: "He finds Okafor near the elbow." },
-    { time: "00:00:14.200", speaker: "Color", text: "This is where he loves to operate, he’s so tough to guard there." },
-    { time: "00:00:16.000", speaker: "PlayByPlay", text: "Okafor drives right, defender stays with him." },
-    { time: "00:00:19.200", speaker: "PlayByPlay", text: "Floater in the lane… and it drops!" },
-    { time: "00:00:21.000", speaker: "Color", text: "Soft touch—he makes that look easy." },
-    { time: "00:00:23.300", speaker: "PlayByPlay", text: "Tigers get a stop on the other end, pushing quickly." },
-    { time: "00:00:25.200", speaker: "PlayByPlay", text: "Johnson leading the break, dishes back to Okafor." },
-    { time: "00:00:27.100", speaker: "Color", text: "Great decision—kept the defense on its heels." },
-    { time: "00:00:29.400", speaker: "PlayByPlay", text: "Okafor spins to the left hand, rises for the jumper…" },
-    { time: "00:00:36.300", speaker: "PlayByPlay", text: "And it’s good! Tigers extend their lead." },
-    { time: "00:00:38.100", speaker: "Color", text: "That’s six quick points from Okafor—what a start." },
   ];
 
   return (
-    <>
-      <VStack w="100%" px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
-        <Box w="100%">
-          <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px">
-            Audio Data
+    <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
+      <Box w="100%">
+        <Text fontFamily="poppins" fontWeight="600" color="black" fontSize="20px">
+          Audio Player
+        </Text>
+      </Box>
+
+      {/* Player Card */}
+      <Box
+        w="100%"
+        bg="white"
+        color="black"
+        borderWidth="1px"
+        borderColor="gray.300"
+        borderRadius="16px"
+        p="16px"
+        boxShadow="md"
+      >
+        {/* Controls */}
+        <HStack spacing={3} mb={3}>
+          <Button onClick={() => seek(-5)} isDisabled={!audioUrl}>-5s</Button>
+          <Button onClick={togglePlay} isDisabled={!audioUrl}>
+            {isPlaying ? "Pause" : "Play"}
+          </Button>
+          <Button onClick={() => seek(5)} isDisabled={!audioUrl}>+5s</Button>
+
+          <Text fontSize="14px" color="gray.600" ml="auto">
+            {format(time.cur)} / {format(time.dur)}
           </Text>
-        </Box>
 
-        <HStack justify="center" align="start" w="100%" flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}>
-          <Box
-            mb="50px"
-            fontSize="13px"
-            lineHeight="1.6"
-            bg="white"
-            color="black"
-            borderWidth="1px"
-            borderColor="gray.300"
-            borderRadius="12px"
-            p="12px"
-            w="100%"
-            boxShadow="md"
-          >
-            <HStack align="stretch" spacing={4} w="100%">
-              {/* PLAY/PAUSE */}
-              <Box
-                as="button"
-                onClick={togglePlay}
-                disabled={!audioUrl}
-                w="72px"
-                minW="72px"
-                h="110px"
-                borderRadius="10px"
-                borderWidth="1px"
-                borderColor="gray.300"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                bg={audioUrl ? "gray.50" : "gray.100"}
-                _hover={{ bg: audioUrl ? "gray.200" : "gray.100" }}
-              >
-                <Text fontSize="24px">{isPlaying ? "⏸" : "▶"}</Text>
-              </Box>
-
-              {/* RIGHT SIDE */}
-              <VStack align="start" spacing={3} w="100%">
-                {/* Waveform */}
-                <Box position="relative" w="100%" h="110px" borderWidth="1px" borderColor="gray.200" borderRadius="8px" bg="gray.50" overflow="hidden">
-                  <BarRow color="orange.200" />
-                  <Box position="absolute" top="0" left="0" h="100%" w={`${progressPct}%`} overflow="hidden">
-                    <BarRow color="orange.400" />
-                  </Box>
-                </Box>
-
-                {/* Controls row */}
-                <HStack justify="space-between" align="center" w="100%">
-                  <Text fontSize="12px" color="gray.600">
-                    {format(time.cur)} / {format(time.dur)}
-                  </Text>
-                </HStack>
-              </VStack>
-            </HStack>
-
-            <audio ref={audioRef} preload="auto" />
-          </Box>
+          <Button as="a" href={audioUrl ?? undefined} download isDisabled={!audioUrl}>
+            Download
+          </Button>
         </HStack>
 
-        <VStack w="full">
-          <HStack
-            justify="center"
-            align="stretch"
-            w="100%"
-            flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
-            spacing={4}
-          >
-            <TranscriptJsonPanel title="Raw Transcript" lines={sample} h={500} />
-            <TranscriptTimeline title="Transcript Timeline" lines={sample} h={500} />
-          </HStack>
-        </VStack>
-      </VStack>
-    </>
-  );
-};
+        {/* True waveform with progress & seek */}
+        <WaveformCanvas
+          audioEl={audioRef.current}
+          src={audioUrl}
+          height={112}
+          baseColor="#CBD5E0"
+          progressColor="#ED8936"
+          bg="#FFFFFF"
+        />
 
-export default AudioData;
+        {/* Hidden audio element */}
+        <audio ref={audioRef} preload="auto" />
+      </Box>
+
+      {/* Optional Transcript Box */}
+      <Box
+        w="100%"
+        bg="white"
+        borderWidth="1px"
+        borderColor="gray.300"
+        borderRadius="12px"
+        p="16px"
+        boxShadow="sm"
+      >
+        <Text fontWeight="600" mb={2}>Transcript</Text>
+        <Textarea
+          readOnly
+          value={JSON.stringify(sample, null, 2)}
+          fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+          fontSize="13px"
+          h="220px"
+        />
+      </Box>
+    </VStack>
+  );
+}

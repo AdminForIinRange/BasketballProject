@@ -51,9 +51,8 @@ export default function InputBoxes({ transcript }: Props) {
     { label: "Calm", value: "calm" },
   ];
   const modelOptions = [
-    { label: "GPT-3.5", value: "gpt-3.5" },
-    { label: "GPT-4", value: "gpt-4" },
-    { label: "GPT-4 Turbo", value: "gpt-4-turbo" },
+    { label: "PlayAi", value: "playAi" },
+  
   ];
   const sections = [
     { title: "Choose Model", fields: ["Model"], options: modelOptions },
