@@ -1,16 +1,34 @@
 "use client";
 import { Box, VStack, Text, HStack, Button, Textarea } from "@chakra-ui/react";
 import { HiUpload } from "react-icons/hi";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import InputBoxes from "./InputBoxes";
 import AudioData from "./AudioData";
-import AudioOverlap from "./AuidoOverlap";
+import AudioOverlap from "./AuidoOverlap";          // ✅ fixed name
 import TranscriptJsonPanel from "./TranscriptJsonPanel";
+// We still use the shared timeline component INSIDE AudioOverlap now
+// import TranscriptTimeline from "./TranscriptTimeline";
+import { parseTranscriptJSON } from "@/lib/parseTranscript";
 import TranscriptTimeline from "./TranscriptTimeline";
+import TranscriptTimelineBoth from "./TranscriptTimelineBoth";
+
+type Line = { time?: string; speaker?: string; text: string };
+
+function splitBySpeaker(lines: Line[]) {
+  const color: Line[] = [];
+  const play: Line[]  = [];
+  for (const l of lines) {
+    const s = (l.speaker || "").toLowerCase();
+    if (s.includes("color")) color.push(l);
+    else if (s.includes("play")) play.push(l);
+    else play.push(l); // default route
+  }
+  return { color, play };
+}
 
 export default function Hero() {
-  const [transcript, setTranscript] = useState("");        // <-- LIFTED STATE
+  const [transcript, setTranscript] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFilePick = () => fileInputRef.current?.click();
@@ -20,10 +38,18 @@ export default function Hero() {
     const text = await f.text().catch(() => "");
     setTranscript(text || "");
   };
-  const sample: TranscriptItem[] = [
-    { time: "00:00:03.250", speaker: "PlayByPlay", text: "And we’re underway, tip-off goes to the Tigers." },
-    { time: "00:00:07.900", speaker: "Color", text: "Okafor really climbed the ladder for that one." },
-  ];
+
+  // Parse & split (memoized)
+  const { parsedLines, colorLines, playLines } = useMemo(() => {
+    try {
+      const parsed = transcript.trim() ? parseTranscriptJSON(transcript) : [];
+      const { color, play } = splitBySpeaker(parsed);
+      return { parsedLines: parsed, colorLines: color, playLines: play };
+    } catch {
+      return { parsedLines: [], colorLines: [], playLines: [] };
+    }
+  }, [transcript]);
+
   return (
     <>
       <HStack
@@ -48,7 +74,7 @@ export default function Hero() {
                 </Text>
               </Box>
 
-              {/* Simple, reliable file upload (no extra deps) */}
+              {/* file upload */}
               <HStack justify="end" w="100%" align="end">
                 <input
                   ref={fileInputRef}
@@ -77,10 +103,10 @@ export default function Hero() {
             {/* Editor */}
             <Box py="10px" h="480px" borderRadius="24px">
               <Textarea
-              borderRadius={"24px"}
+                borderRadius="24px"
                 aria-label="Paste JSON with timestamps"
                 value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}   // <-- WIRE IT UP
+                onChange={(e) => setTranscript(e.target.value)}
                 placeholder={`[
   { "time": "00:00:03.250", "speaker": "PlayByPlay", "text": "Tip-off won by the Tigers." },
   { "time": "00:00:07.900", "speaker": "Color", "text": "Great vertical from Okafor there." }
@@ -91,7 +117,7 @@ export default function Hero() {
                 fontSize="13px"
                 lineHeight="1.6"
                 bg="gray.900"
-                color="white"                                  
+                color="white"
                 border="1px solid #ccc"
                 p="12px"
                 h="100%"
@@ -107,28 +133,28 @@ export default function Hero() {
           </Box>
         </Box>
 
-        {/* Pass the text down so Generate can use it */}
+        {/* Right controls */}
         <InputBoxes transcript={transcript} />
       </HStack>
 
-      
-        
+      {/* Dual player with synced timelines */}
+      <AudioOverlap colorLines={colorLines} playLines={playLines} />
 
-      <AudioOverlap />
+      {/* Raw JSON preview */}
+      <VStack mt="50px" w="full" px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
+        <HStack
+          justify="center"
+          align="stretch"
+          w="100%"
+          flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
+          spacing={4}
+        >
+          <TranscriptTimelineBoth title="Transcript" lines={colorLines as any} h={500} />
+          <TranscriptJsonPanel title="Raw Transcript" lines={parsedLines as any} h={500} />
+        </HStack>
+      </VStack>
 
-        <VStack mt={"50px"}  w="full" px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
-                <HStack
-                  justify="center"
-                  align="stretch"
-                  w="100%"
-                  flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
-                  spacing={4}
-                >
-                  <TranscriptJsonPanel title="Raw " lines={sample} h={500} />
-                  <TranscriptTimeline title=" Timeline" lines={sample} h={500} />
-                </HStack>
-              </VStack>
-
+      {/* If you still want the single player somewhere: */}
       {/* <AudioData /> */}
     </>
   );
