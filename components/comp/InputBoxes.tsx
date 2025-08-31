@@ -3,47 +3,65 @@ import React, { useState } from "react";
 import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 import { ChevronDown } from "lucide-react";
 import { parseTranscriptJSON } from "@/lib/parseTranscript";
-import { publishAudioUrl } from "@/lib/audioBus";
+
+import { publishAudioUrl, publishDualAudioUrls } from "@/lib/audioBus";
 
 type Props = { transcript: string };   // <-- accept the editor text
 
 export default function InputBoxes({ transcript }: Props) {
   const [speaking, setSpeaking] = useState(false);
 
-  const handleGenerate = async () => {
-    if (speaking) return;
-    try {
-      const raw = transcript ?? "";                     // <-- read from props
-      if (!raw.trim()) {
-        alert("Paste a JSON transcript first.");
-        return;
-      }
-      const lines = parseTranscriptJSON(raw);
+const handleGenerateDual = async () => {
+  if (speaking) return;
+  try {
+    const raw = transcript ?? "";
+    if (!raw.trim()) {
+      alert("Paste a JSON transcript first.");
+      return;
+    }
+    const lines = parseTranscriptJSON(raw);
 
-      setSpeaking(true);
-      const res = await fetch("/api/playai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lines }), // also send voices/seed if you add UI
-      });
+    // split by speaker
+    const color: typeof lines = [];
+    const play: typeof lines  = [];
+    for (const l of lines) {
+      const s = (l.speaker || "").toLowerCase();
+      if (s.includes("color")) color.push(l);
+      else if (s.includes("play")) play.push(l);
+      else play.push(l); // default route
+    }
+    if (!color.length && !play.length) {
+      alert("No lines found after split.");
+      return;
+    }
 
+    setSpeaking(true);
+
+    const body = (arr: typeof lines) => JSON.stringify({ lines: arr });
+    const [resColor, resPlay] = await Promise.all([
+      color.length ? fetch("/api/playai", { method: "POST", headers: { "Content-Type": "application/json" }, body: body(color) }) : Promise.resolve(null),
+      play.length  ? fetch("/api/playai", { method: "POST", headers: { "Content-Type": "application/json" }, body: body(play)  }) : Promise.resolve(null),
+    ]);
+
+    const pickUrl = async (res: Response | null) => {
+      if (!res) return null;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error || "TTS request failed");
       }
-
       const data = await res.json();
-      const url = data?.audio?.url as string | undefined;
-      if (!url) throw new Error("No audio URL returned");
+      return (data?.audio?.url as string) ?? null;
+    };
 
-      publishAudioUrl(url);
-    } catch (e: any) {
-      console.error(e);
-      alert(`Couldn't generate audio:\n${e?.message ?? String(e)}`);
-    } finally {
-      setSpeaking(false);
-    }
-  };
+    const [colorUrl, playUrl] = await Promise.all([pickUrl(resColor), pickUrl(resPlay)]);
+    publishDualAudioUrls(playUrl, colorUrl); // 👈 tell AudioOverlap to load both
+  } catch (e: any) {
+    console.error(e);
+    alert(`Couldn't generate dual audio:\n${e?.message ?? String(e)}`);
+  } finally {
+    setSpeaking(false);
+  }
+};
 
   const optionSet = [
     { label: "Neutral", value: "neutral" },
@@ -124,31 +142,31 @@ export default function InputBoxes({ transcript }: Props) {
           ))}
         </Box>
       ))}
+<Box
+  mt="10px"
+  as="button"
+  w="360px"
+  borderRadius="16px"
+  bg={speaking ? "gray.500" : "orange.400"}
+  color="white"
+  p="16px"
+  textAlign="center"
+  _hover={{ bg: speaking ? "gray.500" : "orange.500" }}
+  _active={{ bg: speaking ? "gray.500" : "orange.600" }}
+  fontFamily="poppins"
+  fontWeight={700}
+  cursor={speaking ? "not-allowed" : "pointer"}
+  aria-disabled={speaking}
+  onClick={handleGenerateDual}
+  disabled={speaking}
+>
+  <HStack gap="10px" justify="center">
+    <Text fontSize={["18px", "18px", "20px"]} lineHeight="1.1">
+      {speaking ? "Generating…" : "Generate (Dual: Overlap)"}
+    </Text>
+  </HStack>
+</Box>
 
-      <Box
-        mt="15px"
-        as="button"
-        w="360px"
-        borderRadius="16px"
-        bg={speaking ? "gray.500" : "orange.400"}
-        color="white"
-        p="16px"
-        textAlign="center"
-        _hover={{ bg: speaking ? "gray.500" : "orange.500" }}
-        _active={{ bg: speaking ? "gray.500" : "orange.600" }}
-        fontFamily="poppins"
-        fontWeight={700}
-        cursor={speaking ? "not-allowed" : "pointer"}
-        aria-disabled={speaking}
-        onClick={handleGenerate}
-        disabled={speaking}
-      >
-        <HStack gap="10px" justify="center">
-          <Text fontSize={["18px", "18px", "20px"]} lineHeight="1.1">
-            {speaking ? "Generating…" : "Generate"}
-          </Text>
-        </HStack>
-      </Box>
     </VStack>
   );
 }

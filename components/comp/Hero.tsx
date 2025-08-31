@@ -5,6 +5,9 @@ import { useRef, useState } from "react";
 
 import InputBoxes from "./InputBoxes";
 import AudioData from "./AudioData";
+import AudioOverlap from "./AuidoOverlap";
+import TranscriptJsonPanel from "./TranscriptJsonPanel";
+import TranscriptTimeline from "./TranscriptTimeline";
 
 export default function Hero() {
   const [transcript, setTranscript] = useState("");        // <-- LIFTED STATE
@@ -17,7 +20,10 @@ export default function Hero() {
     const text = await f.text().catch(() => "");
     setTranscript(text || "");
   };
-
+  const sample: TranscriptItem[] = [
+    { time: "00:00:03.250", speaker: "PlayByPlay", text: "And we’re underway, tip-off goes to the Tigers." },
+    { time: "00:00:07.900", speaker: "Color", text: "Okafor really climbed the ladder for that one." },
+  ];
   return (
     <>
       <HStack
@@ -105,7 +111,25 @@ export default function Hero() {
         <InputBoxes transcript={transcript} />
       </HStack>
 
-      <AudioData />
+      
+        
+
+      <AudioOverlap />
+
+        <VStack mt={"50px"}  w="full" px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
+                <HStack
+                  justify="center"
+                  align="stretch"
+                  w="100%"
+                  flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
+                  spacing={4}
+                >
+                  <TranscriptJsonPanel title="Raw " lines={sample} h={500} />
+                  <TranscriptTimeline title=" Timeline" lines={sample} h={500} />
+                </HStack>
+              </VStack>
+
+      {/* <AudioData /> */}
     </>
   );
 }

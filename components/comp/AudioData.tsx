@@ -1,6 +1,8 @@
 "use client";
 import { Box, VStack, Text, HStack, Button, Textarea } from "@chakra-ui/react";
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import TranscriptJsonPanel from "./TranscriptJsonPanel";
+import TranscriptTimeline from "./TranscriptTimeline";
 
 /* =========================================================
  * WaveformCanvas (no libs): decodes audio -> draws real peaks
@@ -319,10 +321,6 @@ export default function AudioData() {
   };
 
   /* ---- example transcript block (optional) ---- */
-  const sample: TranscriptItem[] = [
-    { time: "00:00:03.250", speaker: "PlayByPlay", text: "And we’re underway, tip-off goes to the Tigers." },
-    { time: "00:00:07.900", speaker: "Color", text: "Okafor really climbed the ladder for that one." },
-  ];
 
   return (
     <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
@@ -375,24 +373,8 @@ export default function AudioData() {
       </Box>
 
       {/* Optional Transcript Box */}
-      <Box
-        w="100%"
-        bg="white"
-        borderWidth="1px"
-        borderColor="gray.300"
-        borderRadius="12px"
-        p="16px"
-        boxShadow="sm"
-      >
-        <Text fontWeight="600" mb={2}>Transcript</Text>
-        <Textarea
-          readOnly
-          value={JSON.stringify(sample, null, 2)}
-          fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
-          fontSize="13px"
-          h="220px"
-        />
-      </Box>
+
+      
     </VStack>
   );
 }
