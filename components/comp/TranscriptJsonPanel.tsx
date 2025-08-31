@@ -26,7 +26,7 @@ export default function TranscriptPanel({ title = "Transcript", lines, h = 500 }
       fontFamily="Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
       fontSize="14px"
       lineHeight="1.6"
-      w="100%"
+      w="70%"
       h={h}
       overflow="hidden"
     >

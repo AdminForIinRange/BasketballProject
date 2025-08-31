@@ -231,14 +231,15 @@ const Navbar = () => {
    
 
       {/* Main Navigation */}
-      <Box w="100%" py="10px" borderBottom="1px solid #F0F0F0" transition="all 0.3s ease">
+      <Box  w={["100%", "100%", "100%", "100%", "100%", "100%"]}
+        px={["4%", "4%", "6%", "8%", "16%", "16%"]}  py="10px" borderBottom="1px solid #F0F0F0" transition="all 0.3s ease">
         <Box
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          maxW="1400px"
+      
           mx="auto"
-          px={{ base: "20px", lg: "40px" }}
+
         >
           {/* Logo */}
           <Box
@@ -251,7 +252,7 @@ const Navbar = () => {
             
             <Box>
               <Text
-              textIndent={"10px"}
+      
         fontSize={"24px"}
                 fontWeight="600"
                 letterSpacing="0.2px"
