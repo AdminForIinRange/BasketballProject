@@ -33,39 +33,55 @@ const AudioTimelinePage = () => {
   {
     "time": "00:00:03.250",
     "speaker": "PlayByPlay",
-    "text": "Tip-off won by the Tigers."
+    "text": "And we’re off! Tip-off won by the Tigers!"
   },
   {
     "time": "00:00:08.000", 
     "speaker": "Color", 
-    "text": "Great vertical from Okafor there, really impressive."
+    "text": "Oh, look at that jump! Okafor’s vertical is off the charts!"
   },
   {
     "time": "00:00:13.500", 
     "speaker": "PlayByPlay", 
-    "text": "Johnson brings it over the logo, looks like he's setting up for the first play."
+    "text": "Johnson bringing it over the half-court line now, eyeing his options."
   },
   {
-    "time": "00:00:20.000", 
+    "time": "00:00:17.500", 
     "speaker": "Color", 
-    "text": "Yeah, you can tell he's got a good feel for the game today."
+    "text": "He’s got that smooth handle—no pressure, just gliding across the floor!"
   },
   {
-    "time": "00:00:24.500", 
+    "time": "00:00:22.000", 
     "speaker": "PlayByPlay", 
-    "text": "Johnson's driving towards the basket now, this could be an exciting moment!"
+    "text": "Looks like he’s setting up for a play here. Moving towards the right side of the court."
   },
   {
-    "time": "00:00:30.000", 
+    "time": "00:00:26.000", 
     "speaker": "Color", 
-    "text": "He’s known for his quick first step, let’s see if he can blow by the defender."
+    "text": "Smart move, but I bet the defender is thinking, ‘Not so fast, Johnson!’"
   },
   {
-    "time": "00:00:35.500", 
+    "time": "00:00:30.500", 
     "speaker": "PlayByPlay", 
-    "text": "And there it is, he makes his move—what a finish at the rim!"
+    "text": "He’s driving! Johnson takes it strong to the basket... could this be a dunk?"
+  },
+  {
+    "time": "00:00:35.000", 
+    "speaker": "Color", 
+    "text": "Oh, baby! That was *smooth*! And yes, he finished with style! What a move!"
+  },
+  {
+    "time": "00:00:40.000", 
+    "speaker": "PlayByPlay", 
+    "text": "What a play! Tigers take the lead with that explosive move from Johnson!"
+  },
+  {
+    "time": "00:00:45.000", 
+    "speaker": "Color", 
+    "text": "You know, I’ve seen him do that a thousand times, and it never gets old!"
   }
 ]
+
 
 `
   );
@@ -380,37 +396,52 @@ const AudioTimelinePage = () => {
   {
     "time": "00:00:03.250",
     "speaker": "PlayByPlay",
-    "text": "Tip-off won by the Tigers."
+    "text": "And we’re off! Tip-off won by the Tigers!"
   },
   {
     "time": "00:00:08.000", 
     "speaker": "Color", 
-    "text": "Great vertical from Okafor there, really impressive."
+    "text": "Oh, look at that jump! Okafor’s vertical is off the charts!"
   },
   {
     "time": "00:00:13.500", 
     "speaker": "PlayByPlay", 
-    "text": "Johnson brings it over the logo, looks like he's setting up for the first play."
+    "text": "Johnson bringing it over the half-court line now, eyeing his options."
   },
   {
-    "time": "00:00:20.000", 
+    "time": "00:00:17.500", 
     "speaker": "Color", 
-    "text": "Yeah, you can tell he's got a good feel for the game today."
+    "text": "He’s got that smooth handle—no pressure, just gliding across the floor!"
   },
   {
-    "time": "00:00:24.500", 
+    "time": "00:00:22.000", 
     "speaker": "PlayByPlay", 
-    "text": "Johnson's driving towards the basket now, this could be an exciting moment!"
+    "text": "Looks like he’s setting up for a play here. Moving towards the right side of the court."
   },
   {
-    "time": "00:00:30.000", 
+    "time": "00:00:26.000", 
     "speaker": "Color", 
-    "text": "He’s known for his quick first step, let’s see if he can blow by the defender."
+    "text": "Smart move, but I bet the defender is thinking, ‘Not so fast, Johnson!’"
   },
   {
-    "time": "00:00:35.500", 
+    "time": "00:00:30.500", 
     "speaker": "PlayByPlay", 
-    "text": "And there it is, he makes his move—what a finish at the rim!"
+    "text": "He’s driving! Johnson takes it strong to the basket... could this be a dunk?"
+  },
+  {
+    "time": "00:00:35.000", 
+    "speaker": "Color", 
+    "text": "Oh, baby! That was *smooth*! And yes, he finished with style! What a move!"
+  },
+  {
+    "time": "00:00:40.000", 
+    "speaker": "PlayByPlay", 
+    "text": "What a play! Tigers take the lead with that explosive move from Johnson!"
+  },
+  {
+    "time": "00:00:45.000", 
+    "speaker": "Color", 
+    "text": "You know, I’ve seen him do that a thousand times, and it never gets old!"
   }
 ]
 

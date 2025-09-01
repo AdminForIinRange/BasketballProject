@@ -3,35 +3,42 @@ import React, { useState } from "react";
 import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 import { ChevronDown } from "lucide-react";
 import { parseTranscriptJSON } from "@/lib/parseTranscript";
-
 import { publishAudioUrl, publishDualAudioUrls } from "@/lib/audioBus";
 
-type Props = { transcript: string }; // <-- accept the editor text
+type Props = { transcript: string }; 
 
 export default function InputBoxes({ transcript }: Props) {
   const [speaking, setSpeaking] = useState(false);
 
   const handleGenerateDual = async () => {
     if (speaking) return;
+
     try {
       const raw = transcript ?? "";
       if (!raw.trim()) {
-        alert("Paste a JSON transcript first.");
+        alert("Paste a valid JSON transcript first.");
         return;
       }
+
       const lines = parseTranscriptJSON(raw);
 
-      // split by speaker
+      if (!lines || !Array.isArray(lines)) {
+        alert("Invalid transcript format.");
+        return;
+      }
+
+      // Split by speaker
       const color: typeof lines = [];
       const play: typeof lines = [];
       for (const l of lines) {
-        const s = (l.speaker || "").toLowerCase();
-        if (s.includes("color")) color.push(l);
-        else if (s.includes("play")) play.push(l);
+        const speaker = (l.speaker || "").toLowerCase();
+        if (speaker.includes("color")) color.push(l);
+        else if (speaker.includes("play")) play.push(l);
         else play.push(l); // default route
       }
+
       if (!color.length && !play.length) {
-        alert("No lines found after split.");
+        alert("No valid lines found after splitting by speakers.");
         return;
       }
 
@@ -40,14 +47,14 @@ export default function InputBoxes({ transcript }: Props) {
       const body = (arr: typeof lines) => JSON.stringify({ lines: arr });
       const [resColor, resPlay] = await Promise.all([
         color.length
-          ? fetch("/api/playai", {
+          ? fetch("/api/oldplayai", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: body(color),
             })
           : Promise.resolve(null),
         play.length
-          ? fetch("/api/playai", {
+          ? fetch("/api/oldplayai", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: body(play),
@@ -57,10 +64,12 @@ export default function InputBoxes({ transcript }: Props) {
 
       const pickUrl = async (res: Response | null) => {
         if (!res) return null;
+
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err?.error || "TTS request failed");
         }
+
         const data = await res.json();
         return (data?.audio?.url as string) ?? null;
       };
@@ -69,10 +78,16 @@ export default function InputBoxes({ transcript }: Props) {
         pickUrl(resColor),
         pickUrl(resPlay),
       ]);
-      publishDualAudioUrls(playUrl, colorUrl); // 👈 tell AudioOverlap to load both
+
+      if (!colorUrl || !playUrl) {
+        alert("Failed to generate audio URLs.");
+        return;
+      }
+
+      publishDualAudioUrls(playUrl, colorUrl); // tell AudioOverlap to load both
     } catch (e: any) {
       console.error(e);
-      alert(`Couldn't generate dual audio:\n${e?.message ?? String(e)}`);
+      alert(`Couldn't generate dual audio: ${e?.message ?? String(e)}`);
     } finally {
       setSpeaking(false);
     }
@@ -163,15 +178,8 @@ export default function InputBoxes({ transcript }: Props) {
 
   return (
     <VStack
-      justify={[
-        "center",
-        "center",
-        "space-between",
-        "space-between",
-        "space-between",
-        "space-between",
-      ]}
-      align={["center", "center", "stretch", "stretch", "stretch", "stretch"]}
+      justify="center"
+      align="stretch"
       position="relative"
       h="100%"
       w="auto"
@@ -179,12 +187,7 @@ export default function InputBoxes({ transcript }: Props) {
     >
       {sections.map((section, i) => (
         <Box key={section.title + i}>
-          <Text
-            fontFamily="poppins"
-            fontWeight={600}
-            color="black"
-            fontSize="20px"
-          >
+          <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px">
             {section.title}
           </Text>
           {section.fields.map((label, idx) => (
