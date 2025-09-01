@@ -518,15 +518,17 @@ export default function SplicedSequencer() {
           h="180px"
           placeholder='[{"time":"00:00:03.250","speaker":"PlayByPlay","text":"Tip-off won..."}, ...]'
         />
-        <HStack mt={3}>
+        <HStack mt={3} >
           <Button
+         
+    
             onClick={handleBuild}
-            colorScheme="orange"
+
             isDisabled={loading}
           >
             {loading ? "Building…" : "Build Segments"}
           </Button>
-          <Text fontSize="sm" color="gray.600" ml="auto">
+          <Text  fontSize="sm" color="gray.600" ml="auto">
             {segments.length ? `Segments: ${segments.length}` : ""}
           </Text>
         </HStack>

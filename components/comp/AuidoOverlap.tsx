@@ -8,6 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import TranscriptTimeline from "./TranscriptTimeline";
+import { Pause, Play, RotateCcw, SkipBack, SkipForward } from "lucide-react";
 
 type Line = { time?: string; speaker?: string; text: string };
 
@@ -474,21 +475,23 @@ export default function AudioOverlap({
         boxShadow="md"
       >
         <HStack spacing={3} mb={3}>
-          <Button onClick={() => masterSeek(-5)} isDisabled={!bothReady}>
-            -5s
+          <Button         bg={"orange.400"} onClick={() => masterSeek(-5)} isDisabled={!bothReady}>
+          <SkipBack />
           </Button>
-          <Button onClick={masterToggle} isDisabled={!bothReady}>
-            {isPlaying ? "Pause Both" : "Play Both"}
+          <Button         bg={"orange.400"} onClick={masterToggle} isDisabled={!bothReady}>
+            {isPlaying ? <Pause /> : <Play />}
           </Button>
-          <Button onClick={() => masterSeek(5)} isDisabled={!bothReady}>
-            +5s
+          <Button         bg={"orange.400"} onClick={() => masterSeek(5)} isDisabled={!bothReady}>
+             <SkipForward />
           </Button>
           <Button
-            variant="outline"
+          bg={"orange.400"}
+
+    
             onClick={masterRestart}
             isDisabled={!bothReady}
           >
-            Restart
+          <RotateCcw />
           </Button>
           <Text fontSize="14px" color="gray.600" ml="auto">
             COLOR {fmt(tColor.cur)} / {fmt(tColor.dur)} &nbsp; | &nbsp; PLAY{" "}

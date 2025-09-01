@@ -1,8 +1,22 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { Box, Button, HStack, Text, Textarea, VStack } from "@chakra-ui/react";
 import { WaveformCanvas } from "./WaveformCanvas";
 import { Clip, Track, Line } from "./types";
-import { fmt, parseTranscriptJSON, getDuration, stableId, toSec, roleOf } from "./utils";
+import {
+  fmt,
+  parseTranscriptJSON,
+  getDuration,
+  stableId,
+  toSec,
+  roleOf,
+} from "./utils";
+import { PauseIcon, PlayIcon, SkipBack, SkipForward } from "lucide-react";
 
 const AudioTimelinePage = () => {
   /* -------- UI constants -------- */
@@ -14,7 +28,47 @@ const AudioTimelinePage = () => {
   const gridSegments = 12;
 
   /* -------- state -------- */
-  const [raw, setRaw] = useState<string>(`[{"time": "00:00:03.250", "speaker": "PlayByPlay", "text": "Tip-off won by the Tigers."}, {"time": "00:00:07.900", "speaker": "Color", "text": "Great vertical from Okafor there."}, {"time": "00:00:10.200", "speaker": "PlayByPlay", "text": "Johnson brings it over the logo, sets the table for the first set."}]`);
+  const [raw, setRaw] = useState<string>(
+    `[
+  {
+    "time": "00:00:03.250",
+    "speaker": "PlayByPlay",
+    "text": "Tip-off won by the Tigers."
+  },
+  {
+    "time": "00:00:08.000", 
+    "speaker": "Color", 
+    "text": "Great vertical from Okafor there, really impressive."
+  },
+  {
+    "time": "00:00:13.500", 
+    "speaker": "PlayByPlay", 
+    "text": "Johnson brings it over the logo, looks like he's setting up for the first play."
+  },
+  {
+    "time": "00:00:20.000", 
+    "speaker": "Color", 
+    "text": "Yeah, you can tell he's got a good feel for the game today."
+  },
+  {
+    "time": "00:00:24.500", 
+    "speaker": "PlayByPlay", 
+    "text": "Johnson's driving towards the basket now, this could be an exciting moment!"
+  },
+  {
+    "time": "00:00:30.000", 
+    "speaker": "Color", 
+    "text": "He’s known for his quick first step, let’s see if he can blow by the defender."
+  },
+  {
+    "time": "00:00:35.500", 
+    "speaker": "PlayByPlay", 
+    "text": "And there it is, he makes his move—what a finish at the rim!"
+  }
+]
+
+`
+  );
   const [tracks, setTracks] = useState<Track[]>([]);
   const [building, setBuilding] = useState(false);
   const [timelineWidth] = useState(initialTimelineWidth); // Fixed timeline width
@@ -32,12 +86,18 @@ const AudioTimelinePage = () => {
 
   /* -------- derived -------- */
   const totalDuration = useMemo(() => {
-    const ends = tracks.flatMap((t) => t.clips.map((c) => c.startTime + c.duration));
+    const ends = tracks.flatMap((t) =>
+      t.clips.map((c) => c.startTime + c.duration)
+    );
     return ends.length ? Math.max(...ends) : 0;
   }, [tracks]);
 
   const linear = useMemo(
-    () => tracks.flatMap((t) => t.clips.map((c) => ({ ...c, _track: t.id }))).filter((c) => c.url).sort((a, b) => a.startTime - b.startTime),
+    () =>
+      tracks
+        .flatMap((t) => t.clips.map((c) => ({ ...c, _track: t.id })))
+        .filter((c) => c.url)
+        .sort((a, b) => a.startTime - b.startTime),
     [tracks]
   );
 
@@ -71,8 +131,12 @@ const AudioTimelinePage = () => {
   const snapNonOverlap = useCallback(
     (track: Track, clipId: string, proposedStart: number) => {
       const clip = track.clips.find((c) => c.id === clipId)!;
-      const others = track.clips.filter((c) => c.id !== clipId).sort((a, b) => a.startTime - b.startTime);
-      const prev = [...others].reverse().find((c) => c.startTime + c.duration <= proposedStart);
+      const others = track.clips
+        .filter((c) => c.id !== clipId)
+        .sort((a, b) => a.startTime - b.startTime);
+      const prev = [...others]
+        .reverse()
+        .find((c) => c.startTime + c.duration <= proposedStart);
       const next = others.find((c) => c.startTime >= proposedStart);
       const minStart = prev ? prev.startTime + prev.duration : 0;
       const maxStart = next ? next.startTime - clip.duration : Infinity;
@@ -219,7 +283,7 @@ const AudioTimelinePage = () => {
   const renderTrack = (track: Track) => (
     <HStack key={track.id} align="stretch" spacing={4}>
       <Box
-   w={"80px"}
+        w={"80px"}
         height={`${laneHeight + timelinePaddingY * 2}px`}
         bg="gray.800"
         color="white"
@@ -235,13 +299,9 @@ const AudioTimelinePage = () => {
 
       <Box
         position="relative"
-   
-
-
         borderRadius="md"
         px="0"
         py={`${timelinePaddingY}px`}
-
       >
         <Box position="relative" height={`${laneHeight}px`}>
           <Ruler />
@@ -266,8 +326,6 @@ const AudioTimelinePage = () => {
               flexDir="column"
               justifyContent="center"
             >
-      
-
               <Box mt={1}>
                 <WaveformCanvas
                   src={clip.url}
@@ -286,38 +344,104 @@ const AudioTimelinePage = () => {
   return (
     <VStack
       spacing={8}
-      p={8}
       align="stretch"
       w={"100%"}
       px={["4%", "4%", "6%", "8%", "16%", "16%"]}
       bg="white"
       minH="100vh"
     >
+      <Box w="100%">
+        <Text
+          fontFamily="poppins"
+          fontWeight={600}
+          color="black"
+          fontSize="20px"
+          mt="10px"
+        >
+          Timeline Audio Segmentation
+        </Text>
+      </Box>
       {/* Input / Build */}
       <Box
         bg="white"
-        p={6}
+        p={4}
         borderRadius="xl"
         border="1px solid"
         borderColor="gray.200"
         boxShadow="lg"
       >
-        
         <Textarea
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
-          fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
-          fontSize="13px"
-          h="200px"
-          placeholder='[{"time":"00:00:03.250","speaker":"PlayByPlay","text":"Tip-off..."}, ...]'
+          borderRadius="24px"
+                aria-label="Paste JSON with timestamps"
+              
+                placeholder={`[
+  {
+    "time": "00:00:03.250",
+    "speaker": "PlayByPlay",
+    "text": "Tip-off won by the Tigers."
+  },
+  {
+    "time": "00:00:08.000", 
+    "speaker": "Color", 
+    "text": "Great vertical from Okafor there, really impressive."
+  },
+  {
+    "time": "00:00:13.500", 
+    "speaker": "PlayByPlay", 
+    "text": "Johnson brings it over the logo, looks like he's setting up for the first play."
+  },
+  {
+    "time": "00:00:20.000", 
+    "speaker": "Color", 
+    "text": "Yeah, you can tell he's got a good feel for the game today."
+  },
+  {
+    "time": "00:00:24.500", 
+    "speaker": "PlayByPlay", 
+    "text": "Johnson's driving towards the basket now, this could be an exciting moment!"
+  },
+  {
+    "time": "00:00:30.000", 
+    "speaker": "Color", 
+    "text": "He’s known for his quick first step, let’s see if he can blow by the defender."
+  },
+  {
+    "time": "00:00:35.500", 
+    "speaker": "PlayByPlay", 
+    "text": "And there it is, he makes his move—what a finish at the rim!"
+  }
+]
+
+`}
+                spellCheck={false}
+                resize="none"
+                fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+                fontSize="13px"
+                lineHeight="1.6"
+               
+                color="black"
+            
+                p="12px"
+                h="200px"
+                w="100%"
+                _placeholder={{ color: "gray.500" }}
+                _focus={{
+                  borderColor: "black",
+                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+                  outline: "none",
+                }}
         />
         <HStack mt={3}>
           <Button
-            colorScheme="orange"
+            bg={"orange.400"}
+            fontFamily="poppins"
+            fontWeight={600}
             onClick={handleBuild}
             isDisabled={building}
           >
-            {building ? "Building…" : "Build Segments"}
+            {building ? "Building…" : "Segment Audio"}
           </Button>
           <Text fontSize="sm" color="gray.600" ml="auto">
             {tracks.reduce((n, t) => n + t.clips.length, 0)
@@ -339,14 +463,16 @@ const AudioTimelinePage = () => {
       >
         <HStack spacing={3} mb={2}>
           <Button
+            bg={"orange.400"}
             onClick={() =>
               curIndex <= 0 ? setCurIndex(-1) : loadAndPlay(curIndex - 1)
             }
             isDisabled={!linear.length}
           >
-            Prev
+            <SkipBack />
           </Button>
           <Button
+            bg={"orange.400"}
             onClick={() => {
               if (!linear.length) return;
               if (playing) {
@@ -358,30 +484,22 @@ const AudioTimelinePage = () => {
             }}
             isDisabled={!linear.length}
           >
-            {playing ? "Pause" : curIndex === -1 ? "Play All" : "Resume"}
+            {playing ? (
+              <PauseIcon />
+            ) : curIndex === -1 ? (
+              <PlayIcon />
+            ) : (
+              <PlayIcon />
+            )}
           </Button>
           <Button
+            bg={"orange.400"}
             onClick={() => loadAndPlay(curIndex < 0 ? 0 : curIndex + 1)}
             isDisabled={!linear.length}
           >
-            Next
+            <SkipForward />
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              const a = masterAudioRef.current;
-              if (!a) return;
-              a.pause();
-              a.currentTime = 0;
-              setCurIndex(-1);
-              setPlaying(false);
-              setCurTime(0);
-              setCurDur(0);
-            }}
-            isDisabled={!linear.length}
-          >
-            Stop
-          </Button>
+
           <Text fontSize="sm" color="gray.600" ml="auto">
             {curIndex >= 0 ? `Seg ${curIndex + 1}/${linear.length}` : `Idle`} •{" "}
             {fmt(curTime)} / {fmt(curDur)}
@@ -401,11 +519,14 @@ const AudioTimelinePage = () => {
         overflowX="auto" // Horizontal scrolling enabled
         whiteSpace="nowrap"
       >
-        <Text fontSize="xl" fontWeight="bold" mb={4} color="gray.700">
-          Timeline
-        </Text>
         <VStack spacing={4} align="stretch">
-          {tracks.map(renderTrack)}
+          {tracks.length > 0 ? (
+            tracks.map(renderTrack)
+          ) : (
+            <Text color="gray.500" fontSize="sm" textAlign="center">
+              Press "Segment Audio" to create a timeline.
+            </Text>
+          )}
         </VStack>
       </Box>
     </VStack>

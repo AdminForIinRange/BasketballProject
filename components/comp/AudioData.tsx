@@ -1,5 +1,6 @@
 "use client";
 import { Box, VStack, Text, HStack, Button, Textarea } from "@chakra-ui/react";
+import { Download, SkipBack, SkipForward } from "lucide-react";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 
 /* =========================================================
@@ -471,13 +472,13 @@ export default function ScriptAudio() {
       >
         <HStack spacing={3} mb={3}>
           <Button onClick={() => seek(-5)} isDisabled={!audioUrl}>
-            -5s
+       <SkipBack />
           </Button>
           <Button onClick={togglePlay} isDisabled={!audioUrl}>
             {isPlaying ? "Pause" : "Play"}
           </Button>
           <Button onClick={() => seek(5)} isDisabled={!audioUrl}>
-            +5s
+                     <SkipForward />
           </Button>
 
           <Text fontSize="14px" color="gray.600" ml="auto">
@@ -490,7 +491,7 @@ export default function ScriptAudio() {
             download
             isDisabled={!audioUrl}
           >
-            Download
+        <Download />
           </Button>
         </HStack>
 
