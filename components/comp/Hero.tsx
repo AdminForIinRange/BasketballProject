@@ -12,6 +12,8 @@ import TranscriptJsonPanel from "./TranscriptJsonPanel";
 import { parseTranscriptJSON } from "@/lib/parseTranscript";
 import TranscriptTimeline from "./TranscriptTimeline";
 import TranscriptTimelineBoth from "./TranscriptTimelineBoth";
+import VideoEditor from "./VideoEditor";
+import AudioTimeline from "./AudioTimeline";
 
 type Line = { time?: string; speaker?: string; text: string };
 
@@ -163,6 +165,11 @@ export default function Hero() {
 
         </HStack>
       </VStack>
+
+
+      <VideoEditor />
+
+      <AudioTimeline  />
 
       {/* If you still want the single player somewhere: */}
       {/* <AudioData /> */}
