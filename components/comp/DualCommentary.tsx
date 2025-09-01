@@ -1,6 +1,12 @@
 "use client";
 import { Box, VStack, Text, HStack, Button, Textarea } from "@chakra-ui/react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 /* ----------------- Types ----------------- */
 type Line = { time?: string; speaker?: string; text: string };
@@ -52,16 +58,28 @@ function parseTimeToSec(tc?: string): number | undefined {
   if (!tc) return undefined;
   const parts = tc.split(":");
   if (parts.length < 2 || parts.length > 3) return undefined;
-  let h = 0, m = 0, s = 0;
-  if (parts.length === 3) { h = Number(parts[0]) || 0; m = Number(parts[1]) || 0; s = Number(parts[2]) || 0; }
-  else { m = Number(parts[0]) || 0; s = Number(parts[1]) || 0; }
-  if ([h, m, s].some(n => Number.isNaN(n))) return undefined;
+  let h = 0,
+    m = 0,
+    s = 0;
+  if (parts.length === 3) {
+    h = Number(parts[0]) || 0;
+    m = Number(parts[1]) || 0;
+    s = Number(parts[2]) || 0;
+  } else {
+    m = Number(parts[0]) || 0;
+    s = Number(parts[1]) || 0;
+  }
+  if ([h, m, s].some((n) => Number.isNaN(n))) return undefined;
   return h * 3600 + m * 60 + s;
 }
 const fmt = (n: number) => {
   if (!Number.isFinite(n)) return "00:00";
-  const m = Math.floor(n / 60).toString().padStart(2, "0");
-  const s = Math.floor(n % 60).toString().padStart(2, "0");
+  const m = Math.floor(n / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = Math.floor(n % 60)
+    .toString()
+    .padStart(2, "0");
   return `${m}:${s}`;
 };
 
@@ -102,7 +120,8 @@ function WaveformCanvas({
       const per = Math.max(1, Math.floor(ch.length / width));
       const peaks = new Array(Math.floor(ch.length / per));
       for (let i = 0, p = 0; i < ch.length; i += per, p++) {
-        let min = 1, max = -1;
+        let min = 1,
+          max = -1;
         for (let j = 0; j < per && i + j < ch.length; j++) {
           const v = ch[i + j];
           if (v < min) min = v;
@@ -117,7 +136,9 @@ function WaveformCanvas({
     }
   }, [src]);
 
-  useEffect(() => { decodeToPeaks(); }, [decodeToPeaks]);
+  useEffect(() => {
+    decodeToPeaks();
+  }, [decodeToPeaks]);
 
   const repaint = useCallback(() => {
     const c = canvasRef.current;
@@ -191,7 +212,10 @@ function WaveformCanvas({
 
   useEffect(() => {
     let raf = 0;
-    const tick = () => { repaint(); raf = requestAnimationFrame(tick); };
+    const tick = () => {
+      repaint();
+      raf = requestAnimationFrame(tick);
+    };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [repaint]);
@@ -236,7 +260,13 @@ function WaveformCanvas({
     >
       <canvas
         ref={canvasRef}
-        style={{ width: "100%", height: "100%", display: "block", cursor: "pointer", touchAction: "none" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "block",
+          cursor: "pointer",
+          touchAction: "none",
+        }}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -266,15 +296,16 @@ export default function SplicedSequencer() {
     // order by explicit time if present, else by original appearance (idx)
     const withOrder = [...segments];
     withOrder.sort((a, b) => {
-      const aa = (typeof a.startSec === "number" ? a.startSec! : a.idx);
-      const bb = (typeof b.startSec === "number" ? b.startSec! : b.idx);
+      const aa = typeof a.startSec === "number" ? a.startSec! : a.idx;
+      const bb = typeof b.startSec === "number" ? b.startSec! : b.idx;
       return aa - bb;
     });
     // reassign idx to reflect sequencing order
     return withOrder.map((s, i) => ({ ...s, idx: i }));
   }, [segments]);
 
-  const bothReady = orderedSegments.length > 0 && orderedSegments.every(s => s.ttsUrl);
+  const bothReady =
+    orderedSegments.length > 0 && orderedSegments.every((s) => s.ttsUrl);
 
   /* ---- Build per-line TTS (pre-rendered “cuts”) ---- */
   const handleBuild = useCallback(async () => {
@@ -287,7 +318,9 @@ export default function SplicedSequencer() {
         const role = roleOf(l.speaker);
         const startSec = parseTimeToSec(l.time);
         const body = JSON.stringify({
-          lines: [{ text: l.text, speaker: l.speaker || "Speaker", time: l.time }]
+          lines: [
+            { text: l.text, speaker: l.speaker || "Speaker", time: l.time },
+          ],
         });
         try {
           const res = await fetch("/api/playai", {
@@ -355,31 +388,34 @@ export default function SplicedSequencer() {
   }, [raw]);
 
   /* ---- Master playback: walk the sequence without overlap ---- */
-  const loadAndPlayIndex = useCallback(async (i: number) => {
-    const a = masterAudioRef.current;
-    if (!a) return;
-    if (i < 0 || i >= orderedSegments.length) {
-      setCurIdx(-1);
-      setIsPlaying(false);
-      return;
-    }
-    const seg = orderedSegments[i];
-    if (!seg.ttsUrl) {
-      // skip missing audio
-      loadAndPlayIndex(i + 1);
-      return;
-    }
-    a.src = seg.ttsUrl;
-    try {
-      await a.play();
-      setCurIdx(i);
-      setIsPlaying(true);
-    } catch {
-      // user gesture might be required, keep state
-      setCurIdx(i);
-      setIsPlaying(!(a.paused));
-    }
-  }, [orderedSegments]);
+  const loadAndPlayIndex = useCallback(
+    async (i: number) => {
+      const a = masterAudioRef.current;
+      if (!a) return;
+      if (i < 0 || i >= orderedSegments.length) {
+        setCurIdx(-1);
+        setIsPlaying(false);
+        return;
+      }
+      const seg = orderedSegments[i];
+      if (!seg.ttsUrl) {
+        // skip missing audio
+        loadAndPlayIndex(i + 1);
+        return;
+      }
+      a.src = seg.ttsUrl;
+      try {
+        await a.play();
+        setCurIdx(i);
+        setIsPlaying(true);
+      } catch {
+        // user gesture might be required, keep state
+        setCurIdx(i);
+        setIsPlaying(!a.paused);
+      }
+    },
+    [orderedSegments],
+  );
 
   const onEnded = useCallback(() => {
     // move to next segment auto
@@ -394,7 +430,10 @@ export default function SplicedSequencer() {
   useEffect(() => {
     const a = masterAudioRef.current;
     if (!a) return;
-    const onTime = () => { setCurTime(a.currentTime || 0); setCurDur(a.duration || 0); };
+    const onTime = () => {
+      setCurTime(a.currentTime || 0);
+      setCurDur(a.duration || 0);
+    };
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onTime);
     a.addEventListener("ended", onEnded);
@@ -424,11 +463,17 @@ export default function SplicedSequencer() {
     setCurDur(0);
   };
   const masterPrev = () => {
-    if (curIdx <= 0) { masterStop(); return; }
+    if (curIdx <= 0) {
+      masterStop();
+      return;
+    }
     loadAndPlayIndex(curIdx - 1);
   };
   const masterNext = () => {
-    if (curIdx < 0) { loadAndPlayIndex(0); return; }
+    if (curIdx < 0) {
+      loadAndPlayIndex(0);
+      return;
+    }
     loadAndPlayIndex(curIdx + 1);
   };
 
@@ -438,7 +483,10 @@ export default function SplicedSequencer() {
   };
   const playSeg = (id: string) => {
     const a = segAudioRefs.current[id];
-    if (a) { a.currentTime = 0; a.play().catch(() => {}); }
+    if (a) {
+      a.currentTime = 0;
+      a.play().catch(() => {});
+    }
   };
 
   return (
@@ -471,7 +519,11 @@ export default function SplicedSequencer() {
           placeholder='[{"time":"00:00:03.250","speaker":"PlayByPlay","text":"Tip-off won..."}, ...]'
         />
         <HStack mt={3}>
-          <Button onClick={handleBuild} colorScheme="orange" isDisabled={loading}>
+          <Button
+            onClick={handleBuild}
+            colorScheme="orange"
+            isDisabled={loading}
+          >
             {loading ? "Building…" : "Build Segments"}
           </Button>
           <Text fontSize="sm" color="gray.600" ml="auto">
@@ -491,14 +543,30 @@ export default function SplicedSequencer() {
         boxShadow="md"
       >
         <HStack spacing={3} mb={2}>
-          <Button onClick={masterPrev} isDisabled={!bothReady}>Prev</Button>
-          <Button onClick={isPlaying ? masterPause : masterPlay} isDisabled={!bothReady}>
-            {isPlaying ? "Pause" : (curIdx === -1 ? "Play All" : "Resume")}
+          <Button onClick={masterPrev} isDisabled={!bothReady}>
+            Prev
           </Button>
-          <Button onClick={masterNext} isDisabled={!bothReady}>Next</Button>
-          <Button variant="outline" onClick={masterStop} isDisabled={!bothReady}>Stop</Button>
+          <Button
+            onClick={isPlaying ? masterPause : masterPlay}
+            isDisabled={!bothReady}
+          >
+            {isPlaying ? "Pause" : curIdx === -1 ? "Play All" : "Resume"}
+          </Button>
+          <Button onClick={masterNext} isDisabled={!bothReady}>
+            Next
+          </Button>
+          <Button
+            variant="outline"
+            onClick={masterStop}
+            isDisabled={!bothReady}
+          >
+            Stop
+          </Button>
           <Text fontSize="14px" color="gray.600" ml="auto">
-            {curIdx >= 0 ? `Seg ${curIdx + 1}/${orderedSegments.length}` : `Idle`} • {fmt(curTime)} / {fmt(curDur)}
+            {curIdx >= 0
+              ? `Seg ${curIdx + 1}/${orderedSegments.length}`
+              : `Idle`}{" "}
+            • {fmt(curTime)} / {fmt(curDur)}
           </Text>
         </HStack>
         <audio ref={masterAudioRef} preload="auto" />
@@ -515,16 +583,34 @@ export default function SplicedSequencer() {
           p="16px"
           boxShadow="sm"
         >
-          <Text fontWeight={700} mb={3}>Segments (read-only)</Text>
+          <Text fontWeight={700} mb={3}>
+            Segments (read-only)
+          </Text>
           <VStack align="stretch" spacing={4}>
             {orderedSegments.map((s) => (
-              <Box key={s.id} borderWidth="1px" borderColor="gray.200" borderRadius="10px" p="12px">
+              <Box
+                key={s.id}
+                borderWidth="1px"
+                borderColor="gray.200"
+                borderRadius="10px"
+                p="12px"
+              >
                 <HStack>
                   <Text fontWeight={700}>#{s.idx + 1}</Text>
-                  <Text><b>Role:</b> {s.role}</Text>
-                  <Text><b>Speaker:</b> {s.speaker}</Text>
-                  <Text><b>Time:</b> {s.time ?? (typeof s.startSec === "number" ? fmt(s.startSec) : "—")}</Text>
-                  <Text><b>Voice:</b> {s.voiceId ?? "unknown"}</Text>
+                  <Text>
+                    <b>Role:</b> {s.role}
+                  </Text>
+                  <Text>
+                    <b>Speaker:</b> {s.speaker}
+                  </Text>
+                  <Text>
+                    <b>Time:</b>{" "}
+                    {s.time ??
+                      (typeof s.startSec === "number" ? fmt(s.startSec) : "—")}
+                  </Text>
+                  <Text>
+                    <b>Voice:</b> {s.voiceId ?? "unknown"}
+                  </Text>
                 </HStack>
                 <Text mt={2}>{s.text}</Text>
 
@@ -533,13 +619,24 @@ export default function SplicedSequencer() {
                     Play Segment
                   </Button>
                   <Button
-                    onClick={() => { const i = orderedSegments.findIndex(x => x.id === s.id); if (i >= 0) { setCurIdx(i); setTimeout(() => masterPlay(), 0); } }}
+                    onClick={() => {
+                      const i = orderedSegments.findIndex((x) => x.id === s.id);
+                      if (i >= 0) {
+                        setCurIdx(i);
+                        setTimeout(() => masterPlay(), 0);
+                      }
+                    }}
                     variant="outline"
                     isDisabled={!s.ttsUrl}
                   >
                     Play from Here
                   </Button>
-                  <Button as="a" href={s.ttsUrl ?? undefined} download isDisabled={!s.ttsUrl}>
+                  <Button
+                    as="a"
+                    href={s.ttsUrl ?? undefined}
+                    download
+                    isDisabled={!s.ttsUrl}
+                  >
                     Download
                   </Button>
                 </HStack>
@@ -552,7 +649,11 @@ export default function SplicedSequencer() {
                     baseColor={s.role === "Color" ? "#D6BCFA" : "#90CDF4"}
                     progressColor={s.role === "Color" ? "#805AD5" : "#3182CE"}
                   />
-                  <audio ref={attachSegRef(s.id)} preload="auto" src={s.ttsUrl ?? undefined} />
+                  <audio
+                    ref={attachSegRef(s.id)}
+                    preload="auto"
+                    src={s.ttsUrl ?? undefined}
+                  />
                 </Box>
               </Box>
             ))}

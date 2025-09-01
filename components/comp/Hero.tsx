@@ -137,7 +137,6 @@ export default function Hero() {
                   boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
                   outline: "none",
                 }}
-                
               />
             </Box>
           </Box>
@@ -159,17 +158,12 @@ export default function Hero() {
           w="100%"
           flexWrap={["wrap", "wrap", "nowrap", "nowrap", "nowrap", "nowrap"]}
           spacing={4}
-        >
-        
-
-
-        </HStack>
+        ></HStack>
       </VStack>
-
 
       <VideoEditor />
 
-      <AudioTimeline  />
+      <AudioTimeline />
 
       {/* If you still want the single player somewhere: */}
       {/* <AudioData /> */}
