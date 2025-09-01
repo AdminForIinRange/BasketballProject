@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import TranscriptTimeline from "./TranscriptTimeline";
-import { SkipBack, PauseIcon, PlayIcon, SkipForward } from "lucide-react";
+import { SkipBack, PauseIcon, PlayIcon, SkipForward, RotateCcw } from "lucide-react";
 
 type Line = { time?: string; speaker?: string; text: string };
 
@@ -493,7 +493,8 @@ export default function AudioOverlap({
             onClick={masterRestart}
             isDisabled={!bothReady}
           >
-            Restart
+            <RotateCcw /> 
+            
           </Button>
           <Text fontSize="14px" color="gray.600" ml="auto">
             COLOR {fmt(tColor.cur)} / {fmt(tColor.dur)} &nbsp; | &nbsp; PLAY{" "}

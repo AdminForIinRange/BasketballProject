@@ -1,7 +1,13 @@
 "use client";
 import { Box, VStack, Text, HStack, Button, Textarea } from "@chakra-ui/react";
-import { SkipBack, SkipForward } from "lucide-react";
-import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { PauseIcon, PlayIcon, SkipBack, SkipForward } from "lucide-react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import TranscriptTimeline, { TLLine } from "./TranscriptTimeline";
 
 /* ===== waveform (same minimal one as overlap; omit if you reuse) ===== */
@@ -151,8 +157,19 @@ function WaveformCanvas({
   }, [repaint]);
 
   return (
-    <Box w="100%" h={`${height}px`} borderWidth="1px" borderColor="gray.300" borderRadius="16px" overflow="hidden" bg="white">
-      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+    <Box
+      w="100%"
+      h={`${height}px`}
+      borderWidth="1px"
+      borderColor="gray.300"
+      borderRadius="16px"
+      overflow="hidden"
+      bg="white"
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", display: "block" }}
+      />
     </Box>
   );
 }
@@ -160,8 +177,12 @@ function WaveformCanvas({
 /* ===== helpers ===== */
 const format = (s: number) => {
   if (!Number.isFinite(s)) return "00:00";
-  const m = Math.floor(s / 60).toString().padStart(2, "0");
-  const sec = Math.floor(s % 60).toString().padStart(2, "0");
+  const m = Math.floor(s / 60)
+    .toString()
+    .padStart(2, "0");
+  const sec = Math.floor(s % 60)
+    .toString()
+    .padStart(2, "0");
   return `${m}:${sec}`;
 };
 const secToStamp = (s: number) => {
@@ -282,7 +303,8 @@ export default function ScriptAudio() {
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => setTime({ cur: a.currentTime || 0, dur: a.duration || 0 });
+    const onTime = () =>
+      setTime({ cur: a.currentTime || 0, dur: a.duration || 0 });
     const onEnd = () => setIsPlaying(false);
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onTime);
@@ -375,7 +397,10 @@ export default function ScriptAudio() {
   const seek = (delta: number) => {
     const a = audioRef.current;
     if (!a) return;
-    a.currentTime = Math.max(0, Math.min(a.duration || 0, (a.currentTime || 0) + delta));
+    a.currentTime = Math.max(
+      0,
+      Math.min(a.duration || 0, (a.currentTime || 0) + delta)
+    );
   };
 
   const loadSample = () => {
@@ -439,12 +464,26 @@ export default function ScriptAudio() {
   return (
     <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
       <Box w="100%">
-        <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px" mt="50px">
+        <Text
+          fontFamily="poppins"
+          fontWeight={600}
+          color="black"
+          fontSize="20px"
+          mt="50px"
+        >
           Non-Overlapping Audio — Natural Flow
         </Text>
       </Box>
 
-      <Box w="100%" bg="white" borderWidth="1px" borderColor="gray.300" borderRadius="16px" p="16px" boxShadow="md">
+      <Box
+        w="100%"
+        bg="white"
+        borderWidth="1px"
+        borderColor="gray.300"
+        borderRadius="16px"
+        p="16px"
+        boxShadow="md"
+      >
         <Textarea
           borderRadius="24px"
           aria-label="Paste JSON with timestamps"
@@ -459,30 +498,78 @@ export default function ScriptAudio() {
           h="200px"
           w="100%"
           _placeholder={{ color: "gray.500" }}
-          _focus={{ borderColor: "black", boxShadow: "0 0 0 2px rgba(0,0,0,0.08)", outline: "none" }}
+          _focus={{
+            borderColor: "black",
+            boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+            outline: "none",
+          }}
           value={transcript}
           onChange={(e) => setTranscript(e.target.value)}
         />
         <HStack mt={3} spacing={3}>
-          <Button bg="orange.400" onClick={handleGenerate} isDisabled={busy}>
+          <Button  bg={"orange.400"}
+            fontFamily="poppins"
+            fontWeight={600} onClick={handleGenerate} isDisabled={busy}>
             {busy ? "Generating…" : "Generate"}
           </Button>
-          <Button bg="orange.400" onClick={loadSample}>Load sample</Button>
+          <Button bg={"orange.400"}
+            fontFamily="poppins"
+            fontWeight={600} onClick={loadSample}>
+            Load sample
+          </Button>
         </HStack>
       </Box>
 
-      <Box w="100%" bg="white" color="black" borderWidth="1px" borderColor="gray.300" borderRadius="16px" p="16px" boxShadow="md">
+      <Box
+        w="100%"
+        bg="white"
+        color="black"
+        borderWidth="1px"
+        borderColor="gray.300"
+        borderRadius="16px"
+        p="16px"
+        boxShadow="md"
+      >
         <HStack spacing={3} mb={3}>
-          <Button bg="orange.400" onClick={() => seek(-5)} isDisabled={!audioUrl}><SkipBack /></Button>
-          <Button bg="orange.400" onClick={togglePlay} isDisabled={!audioUrl}>{isPlaying ? "Pause" : "Play"}</Button>
-          <Button bg="orange.400" onClick={() => seek(5)} isDisabled={!audioUrl}><SkipForward /></Button>
-          <Text fontSize="14px" color="gray.600" ml="auto">
+          <Button
+            bg="orange.400"
+            onClick={() => seek(-5)}
+            isDisabled={!audioUrl}
+          >
+            <SkipBack />
+          </Button>
+          <Button bg="orange.400" onClick={togglePlay} isDisabled={!audioUrl}>
+            {" "}
+            {isPlaying ? <PauseIcon /> : <PlayIcon />}
+          </Button>
+          <Button
+            bg="orange.400"
+            onClick={() => seek(5)}
+            isDisabled={!audioUrl}
+          >
+            <SkipForward />
+          </Button>
+          <Text  fontSize="14px" color="gray.600" ml="auto">
             {format(time.cur)} / {format(time.dur)}
           </Text>
-          <Button bg="orange.400" as="a" href={audioUrl ?? undefined} download isDisabled={!audioUrl}>Download</Button>
+          <Button
+           bg={"orange.400"}
+            fontFamily="poppins"
+            fontWeight={600}
+            as="a"
+            href={audioUrl ?? undefined}
+            download
+            isDisabled={!audioUrl}
+          >
+            Download
+          </Button>
         </HStack>
 
-        <WaveformCanvas audioEl={audioRef.current} src={audioUrl} height={112} />
+        <WaveformCanvas
+          audioEl={audioRef.current}
+          src={audioUrl}
+          height={112}
+        />
         <audio ref={audioRef} preload="auto" />
 
         {fullLines.length > 0 && (
