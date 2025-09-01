@@ -467,7 +467,7 @@ export default function AudioOverlap({
           fontSize="20px"
           mt="10px"
         >
-          Dual Commentary — Overlap (Aligned to Transcript)
+          Audio Individualization - Overlap 
         </Text>
       </Box>
 
