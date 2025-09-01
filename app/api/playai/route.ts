@@ -9,7 +9,7 @@ type VoiceDef = { voice: string };
 
 const VOICE_POOL: Record<string, VoiceDef> = {
   PlayByPlay: { voice: "Dexter (English (US)/American)" },
-  Color: { voice: "Jennifer (English (IT)/Italian)" },
+  Color: { voice: "Jennifer (English (US)/American)" },
   Analyst: { voice: "Will (English (GB)/British)" },
   Speaker: { voice: "Dexter (English (US)/American)" },
 };
