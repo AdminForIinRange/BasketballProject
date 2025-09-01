@@ -2,15 +2,15 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 
-type Line = { time: string; speaker: string; text: string };
+export type TLLine = { time: string; speaker: string; text: string };
 
 type Props = {
   title?: string;
-  lines: Line[];
+  lines: TLLine[];
   h?: string | number;
-  /** current playback time (seconds) from your audio element */
+  /** current playback time (seconds) */
   currentTime?: number;
-  /** optional: when user clicks a line, seek player to its start time (seconds) */
+  /** when user clicks a line, seek player to its start time (seconds) */
   onSeek?: (t: number) => void;
 };
 
@@ -23,30 +23,26 @@ const speakerStyle = (name: string) => {
   return { bg: "gray.600", color: "white" };
 };
 
-/** "HH:MM:SS(.mmm)" -> seconds */
-function timeToSeconds(t: string | undefined): number {
+/** "HH:MM:SS(.mmm)" or "MM:SS(.mmm)" -> seconds */
+function timeToSeconds(t?: string): number {
   if (!t) return 0;
-  // Supports "MM:SS", "HH:MM:SS", and optional ".ms"
-  const parts = t.split(":").map(Number);
-  if (parts.some((n) => Number.isNaN(n))) return 0;
+  const parts = t.split(":");
   if (parts.length === 2) {
-    // MM:SS(.ms)
-    const [mm, rest] = t.split(":");
+    const [mm, rest] = parts;
     const [ss, ms] = rest.split(".");
     return (
-      parseInt(mm, 10) * 60 +
+      parseInt(mm || "0", 10) * 60 +
       parseInt(ss || "0", 10) +
       (ms ? Number(`0.${ms}`) : 0)
     );
   }
   if (parts.length === 3) {
-    const [hh, mmAndSs, maybeMs] = [parts[0], parts[1], parts[2]];
-    const [hhStr, mmStr, ssStr] = t.split(":");
-    const [ssWhole, ms] = ssStr.split(".");
+    const [hh, mm, rest] = parts;
+    const [ss, ms] = rest.split(".");
     return (
-      parseInt(hhStr || "0", 10) * 3600 +
-      parseInt(mmStr || "0", 10) * 60 +
-      parseInt(ssWhole || "0", 10) +
+      parseInt(hh || "0", 10) * 3600 +
+      parseInt(mm || "0", 10) * 60 +
+      parseInt(ss || "0", 10) +
       (ms ? Number(`0.${ms}`) : 0)
     );
   }
@@ -63,10 +59,8 @@ export default function TranscriptTimeline({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
-  // Precompute start times and the active index for the current time
   const { starts, activeIdx } = useMemo(() => {
     const starts = lines.map((l) => timeToSeconds(l.time));
-    // active = the last line whose start <= currentTime
     let idx = -1;
     for (let i = 0; i < starts.length; i++) {
       if (starts[i] <= currentTime) idx = i;
@@ -75,23 +69,20 @@ export default function TranscriptTimeline({
     return { starts, activeIdx: idx };
   }, [lines, currentTime]);
 
-  // Smooth-scroll the container to keep the active line in view (a bit above center)
   useEffect(() => {
     if (activeIdx < 0) return;
     const el = itemRefs.current[activeIdx];
     const container = containerRef.current;
     if (!el || !container) return;
-
     const cRect = container.getBoundingClientRect();
     const eRect = el.getBoundingClientRect();
     const currentTop = container.scrollTop + (eRect.top - cRect.top);
-    const targetTop = currentTop - cRect.height * 0.35; // place ~35% from top
-
+    const targetTop = currentTop - cRect.height * 0.35;
     container.scrollTo({ top: targetTop, behavior: "smooth" });
   }, [activeIdx]);
 
   const computedHeight = typeof h === "number" ? `${h}px` : h;
-  const listHeight = `calc(${computedHeight} - 40px)`; // header space
+  const listHeight = `calc(${computedHeight} - 40px)`;
 
   return (
     <Box
@@ -115,11 +106,9 @@ export default function TranscriptTimeline({
 
       <Box
         ref={containerRef}
-        as="div"
         overflowY="auto"
         pr={2}
         h={listHeight}
-        // subtle sticky gradient edges for a “real app” feel
         position="relative"
         sx={{
           "&::before, &::after": {
@@ -163,12 +152,11 @@ export default function TranscriptTimeline({
                 boxShadow={
                   isActive ? "0 6px 14px rgba(237, 137, 54, 0.25)" : "none"
                 }
-                transition="background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease"
+                transition="all 120ms ease"
                 transform={isActive ? "translateY(-1px)" : "none"}
                 cursor={onSeek ? "pointer" : "default"}
                 onClick={() => onSeek?.(start)}
               >
-                {/* timestamp chip */}
                 <Box
                   as="span"
                   px="8px"
@@ -184,7 +172,6 @@ export default function TranscriptTimeline({
                   {line.time}
                 </Box>
 
-                {/* speaker badge */}
                 <Box
                   as="span"
                   px="8px"
@@ -198,12 +185,7 @@ export default function TranscriptTimeline({
                   {line.speaker}
                 </Box>
 
-                {/* text */}
-                <Text
-                  flex="1"
-                  wordBreak="break-word"
-                  fontWeight={isActive ? 600 : 400}
-                >
+                <Text flex="1" wordBreak="break-word" fontWeight={isActive ? 600 : 400}>
                   {line.text}
                 </Text>
               </HStack>

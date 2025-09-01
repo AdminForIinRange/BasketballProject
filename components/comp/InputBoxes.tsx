@@ -1,11 +1,11 @@
 "use client";
+import { Box, VStack, Text, HStack, Button } from "@chakra-ui/react";
 import React, { useState } from "react";
-import { Box, VStack, Text, HStack } from "@chakra-ui/react";
 import { ChevronDown } from "lucide-react";
 import { parseTranscriptJSON } from "@/lib/parseTranscript";
-import { publishAudioUrl, publishDualAudioUrls } from "@/lib/audioBus";
+import { publishDualAudioUrls } from "@/lib/audioBus";
 
-type Props = { transcript: string }; 
+type Props = { transcript: string };
 
 export default function InputBoxes({ transcript }: Props) {
   const [speaking, setSpeaking] = useState(false);
@@ -21,20 +21,30 @@ export default function InputBoxes({ transcript }: Props) {
       }
 
       const lines = parseTranscriptJSON(raw);
-
       if (!lines || !Array.isArray(lines)) {
         alert("Invalid transcript format.");
         return;
       }
 
-      // Split by speaker
+      // Split by speaker without including the speaker name in the TTS request
       const color: typeof lines = [];
       const play: typeof lines = [];
+      const cleanColorLines = [];
+      const cleanPlayLines = [];
+
+      // Separate lines by speaker and strip out speaker names for TTS
       for (const l of lines) {
         const speaker = (l.speaker || "").toLowerCase();
-        if (speaker.includes("color")) color.push(l);
-        else if (speaker.includes("play")) play.push(l);
-        else play.push(l); // default route
+        if (speaker.includes("color")) {
+          color.push(l);
+          cleanColorLines.push(l.text);  // Store only the text
+        } else if (speaker.includes("play")) {
+          play.push(l);
+          cleanPlayLines.push(l.text);  // Store only the text
+        } else {
+          play.push(l);  // Default route
+          cleanPlayLines.push(l.text);
+        }
       }
 
       if (!color.length && !play.length) {
@@ -44,32 +54,32 @@ export default function InputBoxes({ transcript }: Props) {
 
       setSpeaking(true);
 
-      const body = (arr: typeof lines) => JSON.stringify({ lines: arr });
+      // Prepare the body for both color and play audio generation without speaker names
+      const body = (arr: string[]) => JSON.stringify({ lines: arr.map(text => ({ text })) });
+
       const [resColor, resPlay] = await Promise.all([
         color.length
           ? fetch("/api/oldplayai", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: body(color),
+              body: body(cleanColorLines), // Pass only text
             })
           : Promise.resolve(null),
         play.length
           ? fetch("/api/oldplayai", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: body(play),
+              body: body(cleanPlayLines), // Pass only text
             })
           : Promise.resolve(null),
       ]);
 
       const pickUrl = async (res: Response | null) => {
         if (!res) return null;
-
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err?.error || "TTS request failed");
         }
-
         const data = await res.json();
         return (data?.audio?.url as string) ?? null;
       };
@@ -84,7 +94,8 @@ export default function InputBoxes({ transcript }: Props) {
         return;
       }
 
-      publishDualAudioUrls(playUrl, colorUrl); // tell AudioOverlap to load both
+      // Tell AudioOverlap to load both URLs for dual playback
+      publishDualAudioUrls(playUrl, colorUrl);
     } catch (e: any) {
       console.error(e);
       alert(`Couldn't generate dual audio: ${e?.message ?? String(e)}`);
@@ -98,6 +109,7 @@ export default function InputBoxes({ transcript }: Props) {
     { label: "Energetic", value: "energetic" },
     { label: "Calm", value: "calm" },
   ];
+
   const modelOptions = [{ label: "PlayAi", value: "playAi" }];
   const sections = [
     { title: "Choose Model", fields: ["Model"], options: modelOptions },

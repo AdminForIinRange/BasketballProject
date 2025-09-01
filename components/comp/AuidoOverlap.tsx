@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import TranscriptTimeline from "./TranscriptTimeline";
-import { Pause, Play, RotateCcw, SkipBack, SkipForward } from "lucide-react";
+import { SkipBack, PauseIcon, PlayIcon, SkipForward } from "lucide-react";
 
 type Line = { time?: string; speaker?: string; text: string };
 
@@ -28,7 +28,7 @@ const fmt = (s: number) => {
   return `${m}:${sec}`;
 };
 
-// Parse "HH:MM:SS(.mmm)" or "MM:SS(.mmm)" -> seconds
+// HH:MM:SS(.mmm) or MM:SS(.mmm) -> seconds
 const toSec = (t?: string) => {
   if (!t) return 0;
   const parts = t.split(":");
@@ -45,7 +45,7 @@ const toSec = (t?: string) => {
   return 0;
 };
 
-/* ========= Waveform (same look as your AudioData) ========= */
+/* ========= Waveform (no extra libs) ========= */
 function WaveformCanvas({
   audioEl,
   src,
@@ -53,6 +53,7 @@ function WaveformCanvas({
   baseColor = "#CBD5E0",
   progressColor = "#ED8936",
   bg = "#FFFFFF",
+  enableSeek = true,
 }: {
   audioEl: HTMLAudioElement | null;
   src: string | null;
@@ -60,6 +61,7 @@ function WaveformCanvas({
   baseColor?: string;
   progressColor?: string;
   bg?: string;
+  enableSeek?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const peaksRef = useRef<number[] | null>(null);
@@ -203,13 +205,13 @@ function WaveformCanvas({
     return pct * audioEl.duration;
   };
   const onDown: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
-    if (!audioEl) return;
+    if (!enableSeek || !audioEl) return;
     draggingRef.current = true;
     (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
     audioEl.currentTime = timeFromX(e.clientX);
   };
   const onMove: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
-    if (!draggingRef.current || !audioEl) return;
+    if (!enableSeek || !draggingRef.current || !audioEl) return;
     audioEl.currentTime = timeFromX(e.clientX);
   };
   const onUp: React.PointerEventHandler<HTMLCanvasElement> = () => {
@@ -232,7 +234,7 @@ function WaveformCanvas({
           width: "100%",
           height: "100%",
           display: "block",
-          cursor: "pointer",
+          cursor: enableSeek ? "pointer" : "default",
           touchAction: "none",
         }}
         onPointerDown={onDown}
@@ -244,7 +246,10 @@ function WaveformCanvas({
   );
 }
 
-/* ========= Main: dual players + synced timelines + FULL timeline ========= */
+/* ========= NEW: Simple single-track player (non-overlap) ========= */
+/* ========= UPDATED: Simple single-track player (non-overlap) ========= */
+
+/* ========= Main: dual players + offsets aligned to transcript ========= */
 export default function AudioOverlap({
   colorLines = [],
   playLines = [],
@@ -255,20 +260,41 @@ export default function AudioOverlap({
   const [colorUrl, setColorUrl] = useState<string | null>(null);
   const [playUrl, setPlayUrl] = useState<string | null>(null);
 
+  // sequence guards for loads
   const colorSeq = useRef(0);
   const playSeq = useRef(0);
 
+  // delayed start timers
+  const colorDelay = useRef<number | null>(null);
+  const playDelay = useRef<number | null>(null);
+
+  // UI state
   const [isPlaying, setIsPlaying] = useState(false);
   const [tColor, setTColor] = useState({ cur: 0, dur: 0 });
   const [tPlay, setTPlay] = useState({ cur: 0, dur: 0 });
 
-  // —— derive FULL combined lines (sorted by time) ——
+  // ---------- memoized data ----------
+  const offsetColor = useMemo(() => {
+    if (!colorLines || !colorLines.length) return 0;
+    return Math.min(...colorLines.map((l) => toSec(l.time)));
+  }, [colorLines]);
+  const offsetPlay = useMemo(() => {
+    if (!playLines || !playLines.length) return 0;
+    return Math.min(...playLines.map((l) => toSec(l.time)));
+  }, [playLines]);
   const fullLines: Line[] = useMemo(() => {
     const merged = [...(colorLines || []), ...(playLines || [])];
     return merged.slice().sort((a, b) => toSec(a.time) - toSec(b.time));
   }, [colorLines, playLines]);
 
-  // receive both urls from bus
+  // global transcript time (based on elements + offsets)
+  const globalTime = Math.max(
+    (tColor.cur || 0) + offsetColor,
+    (tPlay.cur || 0) + offsetPlay
+  );
+  const fullCurrent = globalTime;
+
+  // ---------- effects ----------
   useEffect(() => {
     const onDual = (e: Event) => {
       const { playUrl, colorUrl } = (e as CustomEvent).detail || {};
@@ -280,7 +306,6 @@ export default function AudioOverlap({
       window.removeEventListener("audio:dual", onDual as EventListener);
   }, []);
 
-  // safe loader: color
   useEffect(() => {
     const a = colorRef.current;
     if (!a || !colorUrl) return;
@@ -296,7 +321,6 @@ export default function AudioOverlap({
     return () => a.removeEventListener("canplay", onCanPlay);
   }, [colorUrl]);
 
-  // safe loader: play
   useEffect(() => {
     const a = playRef.current;
     if (!a || !playUrl) return;
@@ -312,7 +336,6 @@ export default function AudioOverlap({
     return () => a.removeEventListener("canplay", onCanPlay);
   }, [playUrl]);
 
-  // time
   useEffect(() => {
     const ca = colorRef.current,
       pa = playRef.current;
@@ -338,54 +361,107 @@ export default function AudioOverlap({
     };
   }, [colorUrl, playUrl]);
 
-  // controls
-  const masterPlay = async () => {
+  // ---------- helpers ----------
+  const clearDelays = () => {
+    if (colorDelay.current) {
+      clearTimeout(colorDelay.current);
+      colorDelay.current = null;
+    }
+    if (playDelay.current) {
+      clearTimeout(playDelay.current);
+      playDelay.current = null;
+    }
+  };
+
+  // map a global transcript time -> each audio element, and play/pause as needed
+  const seekGlobal = (T: number, keepPlaying: boolean) => {
     const ca = colorRef.current,
       pa = playRef.current;
     if (!ca || !pa) return;
-    await Promise.allSettled([ca.play(), pa.play()]);
-    setIsPlaying(true);
+    clearDelays();
+
+    const tc = Math.max(0, T - offsetColor);
+    const tp = Math.max(0, T - offsetPlay);
+
+    ca.currentTime = Math.min(ca.duration || tc, tc);
+    pa.currentTime = Math.min(pa.duration || tp, tp);
+
+    if (!keepPlaying) {
+      ca.pause();
+      pa.pause();
+      return;
+    }
+
+    const needDelayC = T < offsetColor;
+    const needDelayP = T < offsetPlay;
+
+    const plays: Promise<any>[] = [];
+    if (!needDelayC) plays.push(ca.play().catch(() => {}));
+    else ca.pause();
+    if (!needDelayP) plays.push(pa.play().catch(() => {}));
+    else pa.pause();
+
+    if (needDelayC) {
+      colorDelay.current = window.setTimeout(
+        () => {
+          ca.currentTime = 0;
+          ca.play().catch(() => {});
+        },
+        Math.round((offsetColor - T) * 1000)
+      );
+    }
+    if (needDelayP) {
+      playDelay.current = window.setTimeout(
+        () => {
+          pa.currentTime = 0;
+          pa.play().catch(() => {});
+        },
+        Math.round((offsetPlay - T) * 1000)
+      );
+    }
+  };
+
+  // ---------- controls ----------
+  const [playingFlag, setPlayingFlag] = useState(false);
+  useEffect(() => {
+    setIsPlaying(playingFlag);
+  }, [playingFlag]);
+
+  const masterPlay = () => {
+    seekGlobal(globalTime, true);
+    setPlayingFlag(true);
   };
   const masterPause = () => {
+    clearDelays();
     colorRef.current?.pause();
     playRef.current?.pause();
-    setIsPlaying(false);
+    setPlayingFlag(false);
   };
   const masterToggle = () => {
-    isPlaying ? masterPause() : masterPlay();
+    (isPlaying ? masterPause : masterPlay)();
   };
   const masterSeek = (delta: number) => {
-    const bump = (a: HTMLAudioElement | null) => {
-      if (!a) return;
-      a.currentTime = Math.max(
-        0,
-        Math.min(a.duration || 0, (a.currentTime || 0) + delta)
-      );
-    };
-    bump(colorRef.current);
-    bump(playRef.current);
+    seekGlobal(Math.max(0, globalTime + delta), isPlaying);
   };
   const masterRestart = () => {
-    if (colorRef.current) colorRef.current.currentTime = 0;
-    if (playRef.current) playRef.current.currentTime = 0;
+    const T0 = Math.min(offsetColor || 0, offsetPlay || 0, 0);
+    seekGlobal(T0, isPlaying);
   };
 
   const bothReady = Boolean(colorUrl || playUrl);
 
-  // choose a single "clock" for the FULL timeline highlight:
-  // use the furthest progress so the highlight advances even if one track is silent
-  const fullCurrent = Math.max(tColor.cur, tPlay.cur);
-
   return (
     <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
+      {/* Existing dual overlap section */}
       <Box w="100%">
         <Text
           fontFamily="poppins"
           fontWeight={600}
           color="black"
           fontSize="20px"
+          mt="10px"
         >
-          Dual Commentary — Overlap
+          Dual Commentary — Overlap (Aligned to Transcript)
         </Text>
       </Box>
 
@@ -399,23 +475,25 @@ export default function AudioOverlap({
         boxShadow="md"
       >
         <HStack spacing={3} mb={3}>
-          <Button         bg={"orange.400"} onClick={() => masterSeek(-5)} isDisabled={!bothReady}>
+          <Button   bg={"orange.400"} onClick={() => masterSeek(-5)} isDisabled={!bothReady}>
           <SkipBack />
           </Button>
-          <Button         bg={"orange.400"} onClick={masterToggle} isDisabled={!bothReady}>
-            {isPlaying ? <Pause /> : <Play />}
+          <Button  bg={"orange.400"} onClick={masterToggle} isDisabled={!bothReady}>
+             {isPlaying ? (
+              <PauseIcon  />
+            ) : (
+              <PlayIcon />
+            )}
           </Button>
-          <Button         bg={"orange.400"} onClick={() => masterSeek(5)} isDisabled={!bothReady}>
-             <SkipForward />
+          <Button  bg={"orange.400"} onClick={() => masterSeek(5)} isDisabled={!bothReady}>
+            <SkipForward />
           </Button>
           <Button
           bg={"orange.400"}
-
-    
             onClick={masterRestart}
             isDisabled={!bothReady}
           >
-          <RotateCcw />
+            Restart
           </Button>
           <Text fontSize="14px" color="gray.600" ml="auto">
             COLOR {fmt(tColor.cur)} / {fmt(tColor.dur)} &nbsp; | &nbsp; PLAY{" "}
@@ -425,18 +503,7 @@ export default function AudioOverlap({
 
         {/* Color track */}
         <Box mb={4}>
-          <HStack mb={2} spacing={3}>
-            <Text fontWeight={700}>Color</Text>
-            <Button
-              bg={"orange.400"}
-              as="a"
-              href={colorUrl ?? undefined}
-              download
-              isDisabled={!colorUrl}
-            >
-              Download
-            </Button>
-          </HStack>
+          <HStack mb={2} spacing={3}></HStack>
           <WaveformCanvas
             audioEl={colorRef.current}
             src={colorUrl}
@@ -445,38 +512,11 @@ export default function AudioOverlap({
             progressColor="#805AD5"
           />
           <audio ref={colorRef} preload="auto" />
-
-          {/* {colorLines && colorLines.length > 0 && (
-            <Box mt={3}>
-              <TranscriptTimeline
-                title="Color Timeline"
-                lines={colorLines as any}
-                h={240}
-                currentTime={tColor.cur}
-                onSeek={(t) => {
-                  if (colorRef.current) colorRef.current.currentTime = t;
-                  if (playRef.current)  playRef.current.currentTime  = t; // keep aligned
-                }}
-              />
-            </Box>
-          )} */}
         </Box>
 
         {/* Play-by-Play track */}
         <Box mb={6}>
-          <HStack mb={2} spacing={3}>
-            <Text fontWeight={700}>PlayByPlay</Text>
-            <Button
-              bg={"orange.400"}
-
-              as="a"
-              href={playUrl ?? undefined}
-              download
-              isDisabled={!playUrl}
-            >
-              Download
-            </Button>
-          </HStack>
+          <HStack mb={2} spacing={3}></HStack>
           <WaveformCanvas
             audioEl={playRef.current}
             src={playUrl}
@@ -485,21 +525,6 @@ export default function AudioOverlap({
             progressColor="#3182CE"
           />
           <audio ref={playRef} preload="auto" />
-
-          {/* {playLines && playLines.length > 0 && (
-            <Box mt={3}>
-              <TranscriptTimeline
-                title="PlayByPlay Timeline"
-                lines={playLines as any}
-                h={240}
-                currentTime={tPlay.cur}
-                onSeek={(t) => {
-                  if (colorRef.current) colorRef.current.currentTime = t;
-                  if (playRef.current)  playRef.current.currentTime  = t;
-                }}
-              />
-            </Box>
-          )} */}
         </Box>
 
         {/* FULL combined timeline */}
@@ -511,8 +536,7 @@ export default function AudioOverlap({
               h={300}
               currentTime={fullCurrent}
               onSeek={(t) => {
-                if (colorRef.current) colorRef.current.currentTime = t;
-                if (playRef.current) playRef.current.currentTime = t;
+                seekGlobal(t, isPlaying);
               }}
             />
           </Box>

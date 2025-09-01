@@ -301,8 +301,9 @@ const AudioTimelinePage = () => {
       <Box
         w={"80px"}
         height={`${laneHeight + timelinePaddingY * 2}px`}
-        bg="gray.800"
-        color="white"
+ 
+      bg={"gray.100"}
+        color="black"
         fontSize={"12px"}
         borderRadius="md"
         display="flex"
@@ -330,14 +331,14 @@ const AudioTimelinePage = () => {
               left={`${getClipLeft(clip.startTime)}px`}
               width={`${getClipWidth(clip.duration)}px`}
               height={`${clipHeight}px`}
-              bg={`${clip.color}.400`}
+            
               border="2px solid"
               borderColor={`${clip.color}.600`}
               borderRadius="md"
               boxShadow="sm"
               cursor="grab"
               overflow="hidden"
-              px={3}
+     
               display="flex"
               flexDir="column"
               justifyContent="center"
@@ -345,7 +346,7 @@ const AudioTimelinePage = () => {
               <Box mt={1}>
                 <WaveformCanvas
                   src={clip.url}
-                  height={40}
+                  height={100}
                   baseColor="#E2E8F0"
                   progressColor="#3182CE"
                 />
@@ -364,7 +365,7 @@ const AudioTimelinePage = () => {
       w={"100%"}
       px={["4%", "4%", "6%", "8%", "16%", "16%"]}
       bg="white"
-      minH="100vh"
+      
     >
       <Box w="100%">
         <Text
@@ -372,9 +373,9 @@ const AudioTimelinePage = () => {
           fontWeight={600}
           color="black"
           fontSize="20px"
-          mt="10px"
+          mt="50px"
         >
-          Timeline Audio Segmentation
+          Timeline Audio Segmentation - Segmented flow
         </Text>
       </Box>
       {/* Input / Build */}

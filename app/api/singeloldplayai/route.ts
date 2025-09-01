@@ -10,61 +10,54 @@ type VoiceDef = { voice: string; turn_prefix: string };
 
 // Default “pool” of voices you like. You can swap any of these.
 const VOICE_POOL: Record<string, VoiceDef> = {
-  PlayByPlay: {
-    voice: "Jennifer (English (US)/American)",
-    turn_prefix: "PlayByPlay: ",
-  },
-  Color: { voice: "Furio (English (IT)/Italian)", turn_prefix: "Color: " },
+  PlayByPlay: { voice: "Jennifer (English (US)/American)", turn_prefix: "PlayByPlay: " },
+  Color:      { voice: "Furio (English (IT)/Italian)",     turn_prefix: "Color: " },
 };
 
 export async function POST(req: NextRequest) {
   try {
     if (!process.env.FAL_KEY) {
-      return NextResponse.json(
-        { error: "Missing FAL_KEY on server." },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Missing FAL_KEY on server." }, { status: 500 });
     }
 
     const {
       lines,
       voices, // optional override from client
       seed,
-    }: { lines: Line[]; voices?: VoiceDef[]; seed?: number | null } =
-      await req.json();
+    }: { lines: Line[]; voices?: VoiceDef[]; seed?: number | null } = await req.json();
 
     if (!Array.isArray(lines) || lines.length === 0) {
-      return NextResponse.json(
-        { error: "Body must include non-empty `lines` array." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Body must include non-empty `lines` array." }, { status: 400 });
     }
 
     // Build dialog text
-const input = lines.map((l) => l.text).join("\n");
-
+    const input = lines
+      .map((l) => `${(l.speaker ?? "Speaker").trim()}: ${l.text}`)
+      .join("\n");
 
     // Collect speakers (in appearance order)
     const speakersInOrder = Array.from(
       new Set(
-        lines.map((l) => (l.speaker ?? "Speaker").trim()).filter(Boolean),
-      ),
+        lines
+          .map((l) => (l.speaker ?? "Speaker").trim())
+          .filter(Boolean)
+      )
     );
 
     // If client supplies voices, trust them (but cap at 2)
-    let voiceDefs: VoiceDef[] | undefined =
-      Array.isArray(voices) && voices.length ? voices.slice(0, 2) : undefined;
+    let voiceDefs: VoiceDef[] | undefined = Array.isArray(voices) && voices.length
+      ? voices.slice(0, 2)
+      : undefined;
 
     // Otherwise, auto-pick up to two voices that match speakers
     if (!voiceDefs) {
       const auto: VoiceDef[] = [];
       for (const sp of speakersInOrder) {
         // Try to match well-known speakers first
-        const key = sp.toLowerCase().includes("play")
-          ? "PlayByPlay"
-          : sp.toLowerCase().includes("color")
-            ? "Color"
-            : null;
+        const key =
+          sp.toLowerCase().includes("play") ? "PlayByPlay" :
+          sp.toLowerCase().includes("color") ? "Color" :
+          null;
 
         if (key && auto.length < 2) {
           auto.push(VOICE_POOL[key]);
@@ -74,8 +67,7 @@ const input = lines.map((l) => l.text).join("\n");
 
       // Fallbacks: if we still have fewer than 1–2, fill from pool in stable order
       if (auto.length === 0) auto.push(VOICE_POOL.PlayByPlay);
-      if (speakersInOrder.length > 1 && auto.length === 1)
-        auto.push(VOICE_POOL.Color);
+      if (speakersInOrder.length > 1 && auto.length === 1) auto.push(VOICE_POOL.Color);
 
       voiceDefs = auto.slice(0, 2);
     }
@@ -83,9 +75,7 @@ const input = lines.map((l) => l.text).join("\n");
     // Safety: ensure turn_prefix ends with ": "
     voiceDefs = voiceDefs.map((v) => ({
       ...v,
-      turn_prefix: v.turn_prefix.endsWith(": ")
-        ? v.turn_prefix
-        : `${v.turn_prefix.replace(/:?\s*$/, "")}: `,
+      turn_prefix: v.turn_prefix.endsWith(": ") ? v.turn_prefix : `${v.turn_prefix.replace(/:?\s*$/, "")}: `,
     }));
 
     // If there are >2 distinct speakers, warn (dialog supports max 2 in one shot)
@@ -106,22 +96,15 @@ const input = lines.map((l) => l.text).join("\n");
       sub = await fal.subscribe("fal-ai/playai/tts/dialog", {
         input: {
           input,
-          voices: voiceDefs, // <= one or two voices
+          voices: voiceDefs,        // <= one or two voices
           response_format: "url",
           seed: seed ?? null,
         },
         logs: true,
       });
     } catch (sdkErr: any) {
-      const detail =
-        sdkErr?.response?.data ??
-        sdkErr?.data ??
-        sdkErr?.message ??
-        "Unknown FAL error";
-      return NextResponse.json(
-        { error: "FAL subscribe failed", detail },
-        { status: 502 },
-      );
+      const detail = sdkErr?.response?.data ?? sdkErr?.data ?? sdkErr?.message ?? "Unknown FAL error";
+      return NextResponse.json({ error: "FAL subscribe failed", detail }, { status: 502 });
     }
 
     const data = sub?.data ?? sub ?? {};
@@ -133,21 +116,15 @@ const input = lines.map((l) => l.text).join("\n");
       null;
 
     if (!url) {
-      return NextResponse.json(
-        { error: "No audio URL in FAL response.", raw: data },
-        { status: 502 },
-      );
+      return NextResponse.json({ error: "No audio URL in FAL response.", raw: data }, { status: 502 });
     }
 
     return NextResponse.json({ audio: { url } }, { status: 200 });
   } catch (err: any) {
     console.error("TTS error:", err);
     return NextResponse.json(
-      {
-        error: "Failed to synthesize audio.",
-        detail: err?.message ?? String(err),
-      },
-      { status: 500 },
+      { error: "Failed to synthesize audio.", detail: err?.message ?? String(err) },
+      { status: 500 }
     );
   }
 }

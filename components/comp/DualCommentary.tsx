@@ -1,34 +1,12 @@
 "use client";
 import { Box, VStack, Text, HStack, Button, Textarea } from "@chakra-ui/react";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { SkipBack } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 /* ----------------- Types ----------------- */
 type Line = { time?: string; speaker?: string; text: string };
 
-type Seg = {
-  id: string;
-  idx: number; // sequence index after sort
-  role: "Color" | "PlayByPlay";
-  speaker: string;
-  time?: string;
-  startSec?: number;
-  text: string;
-  ttsUrl: string | null;
-  voiceId?: string | null;
-};
-
 /* ----------------- Utils ----------------- */
-function stableId(prefix = "id") {
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now()
-    .toString(36)
-    .slice(-4)}`;
-}
 function parseTranscriptJSON(raw: string): Line[] {
   let parsed: any;
   try {
@@ -48,42 +26,34 @@ function parseTranscriptJSON(raw: string): Line[] {
     };
   });
 }
-function roleOf(s?: string): "Color" | "PlayByPlay" {
-  const name = (s || "").toLowerCase();
-  if (name.includes("color")) return "Color";
-  if (name.includes("play")) return "PlayByPlay";
-  return "PlayByPlay";
-}
-function parseTimeToSec(tc?: string): number | undefined {
-  if (!tc) return undefined;
-  const parts = tc.split(":");
-  if (parts.length < 2 || parts.length > 3) return undefined;
-  let h = 0,
-    m = 0,
-    s = 0;
-  if (parts.length === 3) {
-    h = Number(parts[0]) || 0;
-    m = Number(parts[1]) || 0;
-    s = Number(parts[2]) || 0;
-  } else {
-    m = Number(parts[0]) || 0;
-    s = Number(parts[1]) || 0;
+
+function splitBySpeaker(lines: Line[]) {
+  const color: Line[] = [];
+  const play: Line[] = [];
+  for (const l of lines) {
+    const name = (l.speaker || "").toLowerCase();
+    if (name.includes("color")) color.push(l);
+    else if (name.includes("play")) play.push(l);
+    else {
+      // default route non-matching to PlayByPlay (adjust if you prefer)
+      play.push(l);
+    }
   }
-  if ([h, m, s].some((n) => Number.isNaN(n))) return undefined;
-  return h * 3600 + m * 60 + s;
+  return { color, play };
 }
-const fmt = (n: number) => {
-  if (!Number.isFinite(n)) return "00:00";
-  const m = Math.floor(n / 60)
+
+const fmt = (s: number) => {
+  if (!Number.isFinite(s)) return "00:00";
+  const m = Math.floor(s / 60)
     .toString()
     .padStart(2, "0");
-  const s = Math.floor(n % 60)
+  const sec = Math.floor(s % 60)
     .toString()
     .padStart(2, "0");
-  return `${m}:${s}`;
+  return `${m}:${sec}`;
 };
 
-/* ------------- WaveformCanvas (unchanged deps; now reusable per segment) ------------- */
+/* ------------- WaveformCanvas (optional pretty waves; no extra deps) ------------- */
 function WaveformCanvas({
   audioEl,
   src,
@@ -157,6 +127,7 @@ function WaveformCanvas({
     const mid = Math.floor(h / 2);
     const peaks = peaksRef.current;
 
+    // base
     ctx.strokeStyle = baseColor;
     ctx.lineWidth = 1;
     if (peaks && peaks.length) {
@@ -176,6 +147,7 @@ function WaveformCanvas({
       ctx.stroke();
     }
 
+    // progress overlay
     if (audioEl && audioEl.duration > 0) {
       const px = Math.round((audioEl.currentTime / audioEl.duration) * w);
       ctx.save();
@@ -201,6 +173,7 @@ function WaveformCanvas({
       }
       ctx.restore();
 
+      // playhead
       ctx.strokeStyle = progressColor;
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -257,6 +230,7 @@ function WaveformCanvas({
       borderRadius="12px"
       overflow="hidden"
       bg="white"
+
     >
       <canvas
         ref={canvasRef}
@@ -276,228 +250,202 @@ function WaveformCanvas({
   );
 }
 
-/* ----------------- Main: pre-rendered sequential splicer ----------------- */
-export default function SplicedSequencer() {
+/* ----------------- Main ----------------- */
+export default function DualCommentary() {
+  // text input
   const [raw, setRaw] = useState("");
-  const [segments, setSegments] = useState<Seg[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  // master player (plays segments one after another)
-  const masterAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [curIdx, setCurIdx] = useState<number>(-1);
+  // split lines
+  const [colorLines, setColorLines] = useState<Line[] | null>(null);
+  const [playLines, setPlayLines] = useState<Line[] | null>(null);
+
+  // audio elements + urls
+  const colorAudioRef = useRef<HTMLAudioElement | null>(null);
+  const playAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [colorUrl, setColorUrl] = useState<string | null>(null);
+  const [playUrl, setPlayUrl] = useState<string | null>(null);
+
+  // sequenced loaders for both tracks
+  const colorSeq = useRef(0);
+  const playSeq = useRef(0);
+
+  // basic state
   const [isPlaying, setIsPlaying] = useState(false);
-  const [curTime, setCurTime] = useState(0);
-  const [curDur, setCurDur] = useState(0);
+  const [tColor, setTColor] = useState({ cur: 0, dur: 0 });
+  const [tPlay, setTPlay] = useState({ cur: 0, dur: 0 });
 
-  // per-segment audio refs for local preview
-  const segAudioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
-
-  const orderedSegments = useMemo(() => {
-    // order by explicit time if present, else by original appearance (idx)
-    const withOrder = [...segments];
-    withOrder.sort((a, b) => {
-      const aa = typeof a.startSec === "number" ? a.startSec! : a.idx;
-      const bb = typeof b.startSec === "number" ? b.startSec! : b.idx;
-      return aa - bb;
-    });
-    // reassign idx to reflect sequencing order
-    return withOrder.map((s, i) => ({ ...s, idx: i }));
-  }, [segments]);
-
-  const bothReady =
-    orderedSegments.length > 0 && orderedSegments.every((s) => s.ttsUrl);
-
-  /* ---- Build per-line TTS (pre-rendered “cuts”) ---- */
-  const handleBuild = useCallback(async () => {
+  /* ---- generate two tracks from JSON ---- */
+  const handleGenerate = async () => {
     try {
-      setLoading(true);
       const lines = parseTranscriptJSON(raw);
+      const { color, play } = splitBySpeaker(lines);
+      if (!color.length && !play.length)
+        throw new Error("No lines after split.");
 
-      // decorate + request TTS per line in parallel
-      const tasks = lines.map(async (l, i) => {
-        const role = roleOf(l.speaker);
-        const startSec = parseTimeToSec(l.time);
-        const body = JSON.stringify({
-          lines: [
-            { text: l.text, speaker: l.speaker || "Speaker", time: l.time },
-          ],
-        });
-        try {
-          const res = await fetch("/api/playai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-          });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            return {
-              id: stableId("seg"),
-              idx: i,
-              role,
-              speaker: l.speaker || "Speaker",
-              time: l.time,
-              startSec,
-              text: l.text,
-              ttsUrl: null,
-              voiceId: null,
-              _err: err?.error || "TTS failed",
-            } as Seg & { _err?: string };
-          }
-          const data = await res.json();
-          const url = (data?.audio?.url as string) ?? null;
-          const voiceId =
-            (data?.voiceId as string) ??
-            (data?.audio?.voiceId as string) ??
-            null;
+      setColorLines(color);
+      setPlayLines(play);
 
-          return {
-            id: stableId("seg"),
-            idx: i,
-            role,
-            speaker: l.speaker || "Speaker",
-            time: l.time,
-            startSec,
-            text: l.text,
-            ttsUrl: url,
-            voiceId,
-          } as Seg;
-        } catch (e: any) {
-          return {
-            id: stableId("seg"),
-            idx: i,
-            role,
-            speaker: l.speaker || "Speaker",
-            time: l.time,
-            startSec,
-            text: l.text,
-            ttsUrl: null,
-            voiceId: null,
-          } as Seg;
+      // kick off two requests in parallel
+      const bodyFor = (arr: Line[]) => JSON.stringify({ lines: arr });
+      const [resColor, resPlay] = await Promise.all([
+        color.length
+          ? fetch("/api/playai", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: bodyFor(color),
+            })
+          : Promise.resolve(null),
+        play.length
+          ? fetch("/api/playai", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: bodyFor(play),
+            })
+          : Promise.resolve(null),
+      ]);
+
+      const getUrl = async (res: Response | null) => {
+        if (!res) return null;
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err?.error || "TTS request failed");
         }
-      });
+        const data = await res.json();
+        return (data?.audio?.url as string) ?? null;
+      };
 
-      const built = await Promise.all(tasks);
-      setSegments(built);
-      setCurIdx(-1);
-      setIsPlaying(false);
+      const [uColor, uPlay] = await Promise.all([
+        getUrl(resColor),
+        getUrl(resPlay),
+      ]);
+      setColorUrl(uColor);
+      setPlayUrl(uPlay);
     } catch (e: any) {
-      alert(e?.message || "Failed to build segments.");
-    } finally {
-      setLoading(false);
+      alert(e?.message || "Failed to generate audio.");
     }
-  }, [raw]);
+  };
 
-  /* ---- Master playback: walk the sequence without overlap ---- */
-  const loadAndPlayIndex = useCallback(
-    async (i: number) => {
-      const a = masterAudioRef.current;
-      if (!a) return;
-      if (i < 0 || i >= orderedSegments.length) {
-        setCurIdx(-1);
-        setIsPlaying(false);
-        return;
-      }
-      const seg = orderedSegments[i];
-      if (!seg.ttsUrl) {
-        // skip missing audio
-        loadAndPlayIndex(i + 1);
-        return;
-      }
-      a.src = seg.ttsUrl;
-      try {
-        await a.play();
-        setCurIdx(i);
-        setIsPlaying(true);
-      } catch {
-        // user gesture might be required, keep state
-        setCurIdx(i);
-        setIsPlaying(!a.paused);
-      }
-    },
-    [orderedSegments],
-  );
-
-  const onEnded = useCallback(() => {
-    // move to next segment auto
-    const next = curIdx + 1;
-    if (next < orderedSegments.length) loadAndPlayIndex(next);
-    else {
-      setIsPlaying(false);
-      setCurIdx(-1);
-    }
-  }, [curIdx, orderedSegments, loadAndPlayIndex]);
-
+  /* ---- safe loader: COLOR ---- */
   useEffect(() => {
-    const a = masterAudioRef.current;
-    if (!a) return;
-    const onTime = () => {
-      setCurTime(a.currentTime || 0);
-      setCurDur(a.duration || 0);
-    };
-    a.addEventListener("timeupdate", onTime);
-    a.addEventListener("loadedmetadata", onTime);
-    a.addEventListener("ended", onEnded);
-    return () => {
-      a.removeEventListener("timeupdate", onTime);
-      a.removeEventListener("loadedmetadata", onTime);
-      a.removeEventListener("ended", onEnded);
-    };
-  }, [onEnded]);
+    const a = colorAudioRef.current;
+    if (!a || !colorUrl) return;
+    const my = ++colorSeq.current;
+    a.pause();
 
-  const masterPlay = () => {
-    if (curIdx === -1) loadAndPlayIndex(0);
-    else loadAndPlayIndex(curIdx);
+    a.crossOrigin = "anonymous";
+    const onReady = async () => {
+      if (colorSeq.current !== my) return;
+      // don't auto-play here; we'll start both together from master play
+    };
+    a.addEventListener("canplay", onReady, { once: true });
+    a.src = colorUrl;
+    a.load();
+    return () => a.removeEventListener("canplay", onReady);
+  }, [colorUrl]);
+
+  /* ---- safe loader: PLAYBYPLAY ---- */
+  useEffect(() => {
+    const a = playAudioRef.current;
+    if (!a || !playUrl) return;
+    const my = ++playSeq.current;
+    a.pause();
+
+    a.crossOrigin = "anonymous";
+    const onReady = async () => {
+      if (playSeq.current !== my) return;
+      // don't auto-play; master controls will do it
+    };
+    a.addEventListener("canplay", onReady, { once: true });
+    a.src = playUrl;
+    a.load();
+    return () => a.removeEventListener("canplay", onReady);
+  }, [playUrl]);
+
+  /* ---- clock updates ---- */
+  useEffect(() => {
+    const ca = colorAudioRef.current,
+      pa = playAudioRef.current;
+    if (!ca || !pa) return;
+    const onC = () =>
+      setTColor({ cur: ca.currentTime || 0, dur: ca.duration || 0 });
+    const onP = () =>
+      setTPlay({ cur: pa.currentTime || 0, dur: pa.duration || 0 });
+    const onEnd = () => setIsPlaying(false);
+
+    ca.addEventListener("timeupdate", onC);
+    ca.addEventListener("loadedmetadata", onC);
+    ca.addEventListener("ended", onEnd);
+    pa.addEventListener("timeupdate", onP);
+    pa.addEventListener("loadedmetadata", onP);
+    pa.addEventListener("ended", onEnd);
+
+    return () => {
+      ca.removeEventListener("timeupdate", onC);
+      ca.removeEventListener("loadedmetadata", onC);
+      ca.removeEventListener("ended", onEnd);
+      pa.removeEventListener("timeupdate", onP);
+      pa.removeEventListener("loadedmetadata", onP);
+      pa.removeEventListener("ended", onEnd);
+    };
+  }, [colorUrl, playUrl]);
+
+  /* ---- master controls (sync both) ---- */
+  const masterPlay = async () => {
+    const ca = colorAudioRef.current,
+      pa = playAudioRef.current;
+    if (!ca || !pa) return;
+    try {
+      // start both as close together as possible
+      await Promise.allSettled([ca.play(), pa.play()]);
+      setIsPlaying(true);
+    } catch {
+      setIsPlaying(!((ca?.paused ?? true) || (pa?.paused ?? true)));
+    }
   };
   const masterPause = () => {
-    masterAudioRef.current?.pause();
+    colorAudioRef.current?.pause();
+    playAudioRef.current?.pause();
     setIsPlaying(false);
   };
-  const masterStop = () => {
-    const a = masterAudioRef.current;
-    if (!a) return;
-    a.pause();
-    a.currentTime = 0;
-    setCurIdx(-1);
-    setIsPlaying(false);
-    setCurTime(0);
-    setCurDur(0);
+  const masterToggle = () => {
+    if (isPlaying) masterPause();
+    else masterPlay();
   };
-  const masterPrev = () => {
-    if (curIdx <= 0) {
-      masterStop();
-      return;
-    }
-    loadAndPlayIndex(curIdx - 1);
+  const masterSeek = (delta: number) => {
+    const bump = (a: HTMLAudioElement | null) => {
+      if (!a) return;
+      a.currentTime = Math.max(
+        0,
+        Math.min(a.duration || 0, (a.currentTime || 0) + delta),
+      );
+    };
+    bump(colorAudioRef.current);
+    bump(playAudioRef.current);
   };
-  const masterNext = () => {
-    if (curIdx < 0) {
-      loadAndPlayIndex(0);
-      return;
-    }
-    loadAndPlayIndex(curIdx + 1);
+  const masterSetTime = (t: number) => {
+    if (colorAudioRef.current)
+      colorAudioRef.current.currentTime = Math.min(
+        t,
+        colorAudioRef.current.duration || t,
+      );
+    if (playAudioRef.current)
+      playAudioRef.current.currentTime = Math.min(
+        t,
+        playAudioRef.current.duration || t,
+      );
   };
 
-  /* ---- Helpers for per-segment preview ---- */
-  const attachSegRef = (id: string) => (el: HTMLAudioElement | null) => {
-    segAudioRefs.current[id] = el;
-  };
-  const playSeg = (id: string) => {
-    const a = segAudioRefs.current[id];
-    if (a) {
-      a.currentTime = 0;
-      a.play().catch(() => {});
-    }
-  };
+  const bothReady = Boolean((colorUrl && playUrl) || colorUrl || playUrl);
 
   return (
     <VStack w="100%" spacing={6} px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
       <Box w="100%">
         <Text fontSize="20px" fontWeight={700} color="black">
-          Pre-rendered Splicer (No Overlap)
+          Dual Commentary (Overlap)
         </Text>
       </Box>
 
-      {/* Input / Build */}
+      {/* Input / Generate */}
       <Box
         w="100%"
         bg="white"
@@ -516,25 +464,20 @@ export default function SplicedSequencer() {
           fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
           fontSize="13px"
           h="180px"
-          placeholder='[{"time":"00:00:03.250","speaker":"PlayByPlay","text":"Tip-off won..."}, ...]'
+          placeholder='[ { "time":"00:00:03.250", "speaker":"PlayByPlay", "text":"Tip-off won..." }, ... ]'
         />
-        <HStack mt={3} >
-          <Button
-         
-    
-            onClick={handleBuild}
-
-            isDisabled={loading}
-          >
-            {loading ? "Building…" : "Build Segments"}
+        <HStack mt={3}>
+          <Button onClick={handleGenerate} colorScheme="orange">
+            Generate 2 Tracks
           </Button>
-          <Text  fontSize="sm" color="gray.600" ml="auto">
-            {segments.length ? `Segments: ${segments.length}` : ""}
+          <Text fontSize="sm" color="gray.600">
+            {colorLines ? `Color: ${colorLines.length} lines` : ""}{" "}
+            {playLines ? `• Play: ${playLines.length} lines` : ""}
           </Text>
         </HStack>
       </Box>
 
-      {/* Master Transport (plays one-by-one) */}
+      {/* Master Controls */}
       <Box
         w="100%"
         bg="white"
@@ -544,124 +487,75 @@ export default function SplicedSequencer() {
         p="16px"
         boxShadow="md"
       >
-        <HStack spacing={3} mb={2}>
-          <Button onClick={masterPrev} isDisabled={!bothReady}>
-            Prev
+        <HStack spacing={3} mb={4}>
+          <Button onClick={() => masterSeek(-5)} isDisabled={!bothReady}>
+         <SkipBack />
           </Button>
-          <Button
-            onClick={isPlaying ? masterPause : masterPlay}
-            isDisabled={!bothReady}
-          >
-            {isPlaying ? "Pause" : curIdx === -1 ? "Play All" : "Resume"}
+          <Button onClick={masterToggle} isDisabled={!bothReady}>
+            {isPlaying ? "Pause Both" : "Play Both"}
           </Button>
-          <Button onClick={masterNext} isDisabled={!bothReady}>
-            Next
-          </Button>
-          <Button
-            variant="outline"
-            onClick={masterStop}
-            isDisabled={!bothReady}
-          >
-            Stop
+          <Button onClick={() => masterSeek(5)} isDisabled={!bothReady}>
+            +5s
           </Button>
           <Text fontSize="14px" color="gray.600" ml="auto">
-            {curIdx >= 0
-              ? `Seg ${curIdx + 1}/${orderedSegments.length}`
-              : `Idle`}{" "}
-            • {fmt(curTime)} / {fmt(curDur)}
+            COLOR {fmt(tColor.cur)} / {fmt(tColor.dur)} &nbsp; | &nbsp; PLAY{" "}
+            {fmt(tPlay.cur)} / {fmt(tPlay.dur)}
           </Text>
         </HStack>
-        <audio ref={masterAudioRef} preload="auto" />
-      </Box>
 
-      {/* Segments List (each in its own place) */}
-      {orderedSegments.length > 0 && (
-        <Box
-          w="100%"
-          bg="white"
-          borderWidth="1px"
-          borderColor="gray.300"
-          borderRadius="12px"
-          p="16px"
-          boxShadow="sm"
-        >
-          <Text fontWeight={700} mb={3}>
-            Segments (read-only)
-          </Text>
-          <VStack align="stretch" spacing={4}>
-            {orderedSegments.map((s) => (
-              <Box
-                key={s.id}
-                borderWidth="1px"
-                borderColor="gray.200"
-                borderRadius="10px"
-                p="12px"
-              >
-                <HStack>
-                  <Text fontWeight={700}>#{s.idx + 1}</Text>
-                  <Text>
-                    <b>Role:</b> {s.role}
-                  </Text>
-                  <Text>
-                    <b>Speaker:</b> {s.speaker}
-                  </Text>
-                  <Text>
-                    <b>Time:</b>{" "}
-                    {s.time ??
-                      (typeof s.startSec === "number" ? fmt(s.startSec) : "—")}
-                  </Text>
-                  <Text>
-                    <b>Voice:</b> {s.voiceId ?? "unknown"}
-                  </Text>
-                </HStack>
-                <Text mt={2}>{s.text}</Text>
-
-                <HStack mt={3} spacing={3}>
-                  <Button onClick={() => playSeg(s.id)} isDisabled={!s.ttsUrl}>
-                    Play Segment
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      const i = orderedSegments.findIndex((x) => x.id === s.id);
-                      if (i >= 0) {
-                        setCurIdx(i);
-                        setTimeout(() => masterPlay(), 0);
-                      }
-                    }}
-                    variant="outline"
-                    isDisabled={!s.ttsUrl}
-                  >
-                    Play from Here
-                  </Button>
-                  <Button
-                    as="a"
-                    href={s.ttsUrl ?? undefined}
-                    download
-                    isDisabled={!s.ttsUrl}
-                  >
-                    Download
-                  </Button>
-                </HStack>
-
-                <Box mt={3}>
-                  <WaveformCanvas
-                    audioEl={segAudioRefs.current[s.id] ?? null}
-                    src={s.ttsUrl}
-                    height={70}
-                    baseColor={s.role === "Color" ? "#D6BCFA" : "#90CDF4"}
-                    progressColor={s.role === "Color" ? "#805AD5" : "#3182CE"}
-                  />
-                  <audio
-                    ref={attachSegRef(s.id)}
-                    preload="auto"
-                    src={s.ttsUrl ?? undefined}
-                  />
-                </Box>
-              </Box>
-            ))}
-          </VStack>
+        {/* Color track */}
+        <Box mb={4}>
+          <HStack mb={2} spacing={3}>
+            <Text fontWeight={700}>Color</Text>
+            <Button
+              as="a"
+              href={colorUrl ?? undefined}
+              download
+              isDisabled={!colorUrl}
+            >
+              Download
+            </Button>
+            <Button
+              onClick={() => masterSetTime(0)}
+              variant="outline"
+              isDisabled={!bothReady}
+            >
+              Restart Both
+            </Button>
+          </HStack>
+          <WaveformCanvas
+            audioEl={colorAudioRef.current}
+            src={colorUrl}
+            height={84}
+            baseColor="#D6BCFA"
+            progressColor="#805AD5"
+          />
+          <audio ref={colorAudioRef} preload="auto" />
         </Box>
-      )}
+
+        {/* PlayByPlay", track */}
+        <Box>
+          <HStack mb={2} spacing={3}>
+            <Text fontWeight={700}>PlayByPlay</Text>
+            <Button
+              as="a"
+              href={playUrl ?? undefined}
+              download
+              isDisabled={!playUrl}
+            >
+              Download
+            </Button>
+          </HStack>
+          <WaveformCanvas
+            audioEl={playAudioRef.current}
+            src={playUrl}
+            height={84}
+            baseColor="#90CDF4"
+            progressColor="#3182CE"
+          />
+          <audio ref={playAudioRef} preload="auto" />
+        </Box>
+      </Box>
     </VStack>
   );
 }

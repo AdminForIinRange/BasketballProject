@@ -25,7 +25,8 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     try {
       const res = await fetch(src, { mode: "cors" });
       const buf = await res.arrayBuffer();
-      const ACtor = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const ACtor =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
       const ctx = new ACtor();
       const decoded: AudioBuffer = await new Promise((resolve, reject) => {
         ctx.decodeAudioData(buf.slice(0), resolve, reject);
@@ -35,7 +36,8 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       const per = Math.max(1, Math.floor(ch.length / width));
       const peaks = new Array(Math.floor(ch.length / per));
       for (let i = 0, p = 0; i < ch.length; i += per, p++) {
-        let min = 1, max = -1;
+        let min = 1,
+          max = -1;
         for (let j = 0; j < per && i + j < ch.length; j++) {
           const v = ch[i + j];
           if (v < min) min = v;
@@ -110,8 +112,18 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
   }, [repaint]);
 
   return (
-    <Box w="100%" h={`${height}px`} borderWidth="1px" borderColor="gray.200" borderRadius="10px" overflow="hidden">
-      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+    <Box
+      w="100%"
+      h={`${height}px`}
+      borderWidth="1px"
+      borderColor="gray.200"
+      borderRadius="10px"
+      overflow="hidden"
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", display: "block" }}
+      />
     </Box>
   );
 };
