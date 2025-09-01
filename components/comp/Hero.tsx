@@ -149,7 +149,7 @@ export default function Hero() {
       {/* Dual player with synced timelines */}
 
       <AudioOverlap colorLines={colorLines} playLines={playLines} />
-      <AudioData />
+      {/* <AudioData /> */}
       {/* Raw JSON preview */}
       <VStack mt="50px" w="full" px={["4%", "4%", "6%", "8%", "16%", "16%"]}>
         <HStack
@@ -160,8 +160,8 @@ export default function Hero() {
           spacing={4}
         ></HStack>
       </VStack>
-
-      <VideoEditor />
+{/* 
+      <VideoEditor /> */}
 
       <AudioTimeline />
 

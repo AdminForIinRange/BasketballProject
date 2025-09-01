@@ -6,18 +6,18 @@ import { fmt, parseTranscriptJSON, getDuration, stableId, toSec, roleOf } from "
 
 const AudioTimelinePage = () => {
   /* -------- UI constants -------- */
-  const initialTimelineWidth = 960; // px (no longer needs dynamic changes)
+  const timelineWidth = 960; // px
   const laneHeight = 84;
   const clipHeight = 60;
   const timelinePaddingY = 12;
-  const trackLabelWidth = 160; // More space for track labels
+  const trackLabelWidth = 120;
   const gridSegments = 12;
 
   /* -------- state -------- */
-  const [raw, setRaw] = useState<string>(`[{"time": "00:00:03.250", "speaker": "PlayByPlay", "text": "Tip-off won by the Tigers."}, {"time": "00:00:07.900", "speaker": "Color", "text": "Great vertical from Okafor there."}, {"time": "00:00:10.200", "speaker": "PlayByPlay", "text": "Johnson brings it over the logo, sets the table for the first set."}]`);
+  const [raw, setRaw] = useState<string>("[]");
   const [tracks, setTracks] = useState<Track[]>([]);
   const [building, setBuilding] = useState(false);
-  const [timelineWidth] = useState(initialTimelineWidth); // Fixed timeline width
+
   const masterAudioRef = useRef<HTMLAudioElement | null>(null);
   const [curIndex, setCurIndex] = useState(-1);
   const [playing, setPlaying] = useState(false);
@@ -86,24 +86,19 @@ const AudioTimelinePage = () => {
     setBuilding(true);
     try {
       const lines = parseTranscriptJSON(raw);
-
       const built = await Promise.all(
         lines.map(async (l, i) => {
           const res = await fetch("/api/playai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: l.text,
-              speaker: l.speaker,
-              time: l.time,
-            }),
+            body: JSON.stringify({ text: l.text, speaker: l.speaker, time: l.time }),
           });
           const data = await res.json();
           const url: string | null = data?.audio?.url ?? null;
           const dur = url ? await getDuration(url) : 0;
 
           const role = roleOf(l.speaker);
-          const startTime = toSec(l.time) + i * 0.001; // tiny epsilon to avoid equal timestamps
+          const startTime = toSec(l.time) + i * 0.001;
           const color = role === "Color" ? "purple" : "blue";
           return {
             id: stableId("seg"),
@@ -118,8 +113,8 @@ const AudioTimelinePage = () => {
         })
       );
 
-      const A: Track = { id: "A", name: "PlayByPlay", clips: [] };
-      const B: Track = { id: "B", name: "Color", clips: [] };
+      const A: Track = { id: "A", name: "Track A", clips: [] };
+      const B: Track = { id: "B", name: "Track B", clips: [] };
       for (const s of built.sort((a, b) => a.startTime - b.startTime)) {
         (s.lane === "A" ? A : B).clips.push(s);
       }
@@ -187,43 +182,54 @@ const AudioTimelinePage = () => {
     };
   }, [onEnded]);
 
-  /* -------- timeline ruler -------- */
-  const Ruler = useCallback(() => {
-    const labels = Array.from({ length: gridSegments + 1 }, (_, i) => {
-      const t = (i / gridSegments) * totalDuration;
-      const left = (i / gridSegments) * timelineWidth;
-      return (
-        <Box key={i} position="absolute" left={`${left}px`} top="0" bottom="0">
-          <Box width="1px" height="100%" bg="gray.200" />
-          <Text
-            mt={1}
-            ml={2}
-            fontSize="xs"
-            color="gray.500"
-            position="absolute"
-            top="0"
-            transform="translateY(-100%)"
-          >
-            {fmt(t)}
-          </Text>
-        </Box>
-      );
-    });
-    return (
-      <Box position="absolute" inset="0">
-        {labels}
-      </Box>
-    );
-  }, [gridSegments, timelineWidth, totalDuration]);
 
-  const renderTrack = (track: Track) => (
+
+
+  /* -------- drag handlers -------- */
+  const onClipPointerDown =
+    (track: Track, clip: Clip) => (e: React.PointerEvent<HTMLDivElement>) => {
+      const box = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+      const grabX = e.clientX - box.left; // px inside clip where grabbed
+      (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+      dragInfo.current = { trackId: track.id, clipId: clip.id, grabX };
+    };
+
+  const onClipPointerMove =
+    (track: Track, clip: Clip) => (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragInfo.current || dragInfo.current.clipId !== clip.id) return;
+      // compute proposed left by aligning grab point to mouse X
+      const laneBox = (
+        e.currentTarget.parentElement!.parentElement! as HTMLDivElement
+      ).getBoundingClientRect(); // outer timeline
+      const x = e.clientX - laneBox.left - dragInfo.current.grabX;
+      const proposedStart = Math.max(0, pxToTime(x));
+      const snapped = snapNonOverlap(track, clip.id, proposedStart);
+      setTracks((prev) =>
+        prev.map((t) =>
+          t.id !== track.id
+            ? t
+            : {
+                ...t,
+                clips: t.clips.map((c) =>
+                  c.id === clip.id ? { ...c, startTime: snapped } : c
+                ),
+              }
+        )
+      );
+    };
+
+  const onClipPointerUp = () => {
+    dragInfo.current = null;
+  };
+
+const renderTrack = (track: Track) => (
     <HStack key={track.id} align="stretch" spacing={4}>
       <Box
-   w={"80px"}
+        minW={`${trackLabelWidth}px`}
+        maxW={`${trackLabelWidth}px`}
         height={`${laneHeight + timelinePaddingY * 2}px`}
         bg="gray.800"
         color="white"
-        fontSize={"12px"}
         borderRadius="md"
         display="flex"
         alignItems="center"
@@ -235,13 +241,13 @@ const AudioTimelinePage = () => {
 
       <Box
         position="relative"
-   
-
-
+        bg="gray.50"
+        border="1px solid"
+        borderColor="gray.200"
         borderRadius="md"
         px="0"
         py={`${timelinePaddingY}px`}
-
+        width={`${timelineWidth}px`}
       >
         <Box position="relative" height={`${laneHeight}px`}>
           <Ruler />
@@ -265,8 +271,25 @@ const AudioTimelinePage = () => {
               display="flex"
               flexDir="column"
               justifyContent="center"
+              onPointerDown={onClipPointerDown(track, clip)}
+              onPointerMove={onClipPointerMove(track, clip)}
+              onPointerUp={onClipPointerUp}
+              onPointerCancel={onClipPointerUp}
             >
-      
+              <HStack justify="space-between">
+                <Text fontSize="sm" fontWeight="bold" color="white" isTruncated>
+                  {clip.person}
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color="white"
+                  opacity={0.9}
+                  ml={3}
+                  whiteSpace="nowrap"
+                >
+                  {Math.round(clip.duration)}s
+                </Text>
+              </HStack>
 
               <Box mt={1}>
                 <WaveformCanvas
@@ -283,8 +306,11 @@ const AudioTimelinePage = () => {
     </HStack>
   );
 
+
+
+
   return (
-    <VStack
+ <VStack
       spacing={8}
       p={8}
       align="stretch"
@@ -302,7 +328,9 @@ const AudioTimelinePage = () => {
         borderColor="gray.200"
         boxShadow="lg"
       >
-        
+        <Text fontSize="xl" fontWeight="bold" mb={3} color="gray.700">
+          Transcript JSON
+        </Text>
         <Textarea
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
@@ -398,8 +426,6 @@ const AudioTimelinePage = () => {
         border="1px solid"
         borderColor="gray.200"
         boxShadow="lg"
-        overflowX="auto" // Horizontal scrolling enabled
-        whiteSpace="nowrap"
       >
         <Text fontSize="xl" fontWeight="bold" mb={4} color="gray.700">
           Timeline
