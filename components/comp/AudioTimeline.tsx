@@ -83,7 +83,7 @@ const AudioTimelinePage = () => {
 ]
 
 
-`
+`,
   );
   const [tracks, setTracks] = useState<Track[]>([]);
   const [building, setBuilding] = useState(false);
@@ -103,7 +103,7 @@ const AudioTimelinePage = () => {
   /* -------- derived -------- */
   const totalDuration = useMemo(() => {
     const ends = tracks.flatMap((t) =>
-      t.clips.map((c) => c.startTime + c.duration)
+      t.clips.map((c) => c.startTime + c.duration),
     );
     return ends.length ? Math.max(...ends) : 0;
   }, [tracks]);
@@ -114,7 +114,7 @@ const AudioTimelinePage = () => {
         .flatMap((t) => t.clips.map((c) => ({ ...c, _track: t.id })))
         .filter((c) => c.url)
         .sort((a, b) => a.startTime - b.startTime),
-    [tracks]
+    [tracks],
   );
 
   /* -------- helpers -------- */
@@ -125,7 +125,7 @@ const AudioTimelinePage = () => {
       const px = (duration / totalDuration) * timelineWidth;
       return Math.max(px, minWidth);
     },
-    [timelineWidth, totalDuration]
+    [timelineWidth, totalDuration],
   );
 
   const getClipLeft = useCallback(
@@ -133,7 +133,7 @@ const AudioTimelinePage = () => {
       if (totalDuration === 0) return 0;
       return (start / totalDuration) * timelineWidth;
     },
-    [timelineWidth, totalDuration]
+    [timelineWidth, totalDuration],
   );
 
   const pxToTime = useCallback(
@@ -141,7 +141,7 @@ const AudioTimelinePage = () => {
       if (totalDuration === 0) return 0;
       return (px / timelineWidth) * totalDuration;
     },
-    [timelineWidth, totalDuration]
+    [timelineWidth, totalDuration],
   );
 
   const snapNonOverlap = useCallback(
@@ -158,7 +158,7 @@ const AudioTimelinePage = () => {
       const maxStart = next ? next.startTime - clip.duration : Infinity;
       return Math.max(minStart, Math.min(proposedStart, maxStart));
     },
-    []
+    [],
   );
 
   /* -------- build from transcript -------- */
@@ -195,7 +195,7 @@ const AudioTimelinePage = () => {
             url,
             lane: role === "Color" ? "B" : "A",
           };
-        })
+        }),
       );
 
       const A: Track = { id: "A", name: "PlayByPlay", clips: [] };
@@ -238,7 +238,7 @@ const AudioTimelinePage = () => {
         setPlaying(!a.paused);
       }
     },
-    [linear]
+    [linear],
   );
 
   const onEnded = useCallback(() => {
@@ -301,8 +301,7 @@ const AudioTimelinePage = () => {
       <Box
         w={"80px"}
         height={`${laneHeight + timelinePaddingY * 2}px`}
- 
-      bg={"gray.100"}
+        bg={"gray.100"}
         color="black"
         fontSize={"12px"}
         borderRadius="md"
@@ -331,14 +330,12 @@ const AudioTimelinePage = () => {
               left={`${getClipLeft(clip.startTime)}px`}
               width={`${getClipWidth(clip.duration)}px`}
               height={`${clipHeight}px`}
-            
               border="2px solid"
               borderColor={`${clip.color}.600`}
               borderRadius="md"
               boxShadow="sm"
               cursor="grab"
               overflow="hidden"
-     
               display="flex"
               flexDir="column"
               justifyContent="center"
@@ -365,7 +362,6 @@ const AudioTimelinePage = () => {
       w={"100%"}
       px={["4%", "4%", "6%", "8%", "16%", "16%"]}
       bg="white"
-      
     >
       <Box w="100%">
         <Text
@@ -391,9 +387,8 @@ const AudioTimelinePage = () => {
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           borderRadius="24px"
-                aria-label="Paste JSON with timestamps"
-              
-                placeholder={`[
+          aria-label="Paste JSON with timestamps"
+          placeholder={`[
   {
     "time": "00:00:03.250",
     "speaker": "PlayByPlay",
@@ -447,23 +442,21 @@ const AudioTimelinePage = () => {
 ]
 
 `}
-                spellCheck={false}
-                resize="none"
-                fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
-                fontSize="13px"
-                lineHeight="1.6"
-               
-                color="black"
-            
-                p="12px"
-                h="200px"
-                w="100%"
-                _placeholder={{ color: "gray.500" }}
-                _focus={{
-                  borderColor: "black",
-                  boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
-                  outline: "none",
-                }}
+          spellCheck={false}
+          resize="none"
+          fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+          fontSize="13px"
+          lineHeight="1.6"
+          color="black"
+          p="12px"
+          h="200px"
+          w="100%"
+          _placeholder={{ color: "gray.500" }}
+          _focus={{
+            borderColor: "black",
+            boxShadow: "0 0 0 2px rgba(0,0,0,0.08)",
+            outline: "none",
+          }}
         />
         <HStack mt={3}>
           <Button

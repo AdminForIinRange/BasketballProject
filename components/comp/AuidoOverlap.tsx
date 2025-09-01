@@ -8,7 +8,13 @@ import React, {
   useMemo,
 } from "react";
 import TranscriptTimeline from "./TranscriptTimeline";
-import { SkipBack, PauseIcon, PlayIcon, SkipForward, RotateCcw } from "lucide-react";
+import {
+  SkipBack,
+  PauseIcon,
+  PlayIcon,
+  SkipForward,
+  RotateCcw,
+} from "lucide-react";
 
 type Line = { time?: string; speaker?: string; text: string };
 
@@ -290,7 +296,7 @@ export default function AudioOverlap({
   // global transcript time (based on elements + offsets)
   const globalTime = Math.max(
     (tColor.cur || 0) + offsetColor,
-    (tPlay.cur || 0) + offsetPlay
+    (tPlay.cur || 0) + offsetPlay,
   );
   const fullCurrent = globalTime;
 
@@ -407,7 +413,7 @@ export default function AudioOverlap({
           ca.currentTime = 0;
           ca.play().catch(() => {});
         },
-        Math.round((offsetColor - T) * 1000)
+        Math.round((offsetColor - T) * 1000),
       );
     }
     if (needDelayP) {
@@ -416,7 +422,7 @@ export default function AudioOverlap({
           pa.currentTime = 0;
           pa.play().catch(() => {});
         },
-        Math.round((offsetPlay - T) * 1000)
+        Math.round((offsetPlay - T) * 1000),
       );
     }
   };
@@ -475,26 +481,33 @@ export default function AudioOverlap({
         boxShadow="md"
       >
         <HStack spacing={3} mb={3}>
-          <Button   bg={"orange.400"} onClick={() => masterSeek(-5)} isDisabled={!bothReady}>
-          <SkipBack />
+          <Button
+            bg={"orange.400"}
+            onClick={() => masterSeek(-5)}
+            isDisabled={!bothReady}
+          >
+            <SkipBack />
           </Button>
-          <Button  bg={"orange.400"} onClick={masterToggle} isDisabled={!bothReady}>
-             {isPlaying ? (
-              <PauseIcon  />
-            ) : (
-              <PlayIcon />
-            )}
+          <Button
+            bg={"orange.400"}
+            onClick={masterToggle}
+            isDisabled={!bothReady}
+          >
+            {isPlaying ? <PauseIcon /> : <PlayIcon />}
           </Button>
-          <Button  bg={"orange.400"} onClick={() => masterSeek(5)} isDisabled={!bothReady}>
+          <Button
+            bg={"orange.400"}
+            onClick={() => masterSeek(5)}
+            isDisabled={!bothReady}
+          >
             <SkipForward />
           </Button>
           <Button
-          bg={"orange.400"}
+            bg={"orange.400"}
             onClick={masterRestart}
             isDisabled={!bothReady}
           >
-            <RotateCcw /> 
-            
+            <RotateCcw />
           </Button>
           <Text fontSize="14px" color="gray.600" ml="auto">
             COLOR {fmt(tColor.cur)} / {fmt(tColor.dur)} &nbsp; | &nbsp; PLAY{" "}

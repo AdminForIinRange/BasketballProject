@@ -90,7 +90,7 @@ export default function Hero() {
 
   const handleFilePick = () => fileInputRef.current?.click();
   const handleFileLoad: React.ChangeEventHandler<HTMLInputElement> = async (
-    e
+    e,
   ) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -255,21 +255,16 @@ export default function Hero() {
       {/* Dual player with synced timelines */}
 
       <AudioOverlap colorLines={colorLines} playLines={playLines} />
-{/* 
+      {/* 
       <AudioData /> */}
       <AudioTimeline />
       <ScriptAudio />
 
-      <Box my={"50px"}>
-        
-
-      </Box>
-
-
+      <Box my={"50px"}></Box>
 
       {/* <AudioData /> */}
       {/* Raw JSON preview */}
- 
+
       {/* 
       <VideoEditor /> */}
 

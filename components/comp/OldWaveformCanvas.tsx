@@ -1,5 +1,11 @@
 "use client";
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { Box } from "@chakra-ui/react";
 
 /**
@@ -34,9 +40,9 @@ export default function WaveformCanvas({
   src,
   height = 120,
   onSeek,
-  accent = "#ed8936",      // orange.400
-  base = "#cbd5e0",        // gray.300
-  buffer = "#e2e8f0",      // gray.200
+  accent = "#ed8936", // orange.400
+  base = "#cbd5e0", // gray.300
+  buffer = "#e2e8f0", // gray.200
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [peaks, setPeaks] = useState<number[] | null>(null);
@@ -55,19 +61,34 @@ export default function WaveformCanvas({
         const res = await fetch(src, { mode: "cors" });
         const buf = await res.arrayBuffer();
 
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const ctx = new (window.AudioContext ||
+          (window as any).webkitAudioContext)();
         const decoded = await ctx.decodeAudioData(buf);
 
         // Build downsampled peak array for speed (one peak per pixel)
         const channelData = decoded.getChannelData(0); // mono view is fine for UI
         const canvas = canvasRef.current;
         const width = canvas?.clientWidth ?? 600;
-        const samplesPerBucket = Math.max(1, Math.floor(channelData.length / width));
-        const nextPeaks: number[] = new Array(Math.floor(channelData.length / samplesPerBucket));
+        const samplesPerBucket = Math.max(
+          1,
+          Math.floor(channelData.length / width),
+        );
+        const nextPeaks: number[] = new Array(
+          Math.floor(channelData.length / samplesPerBucket),
+        );
 
-        for (let i = 0, p = 0; i < channelData.length; i += samplesPerBucket, p++) {
-          let min = 1.0, max = -1.0;
-          for (let j = 0; j < samplesPerBucket && i + j < channelData.length; j++) {
+        for (
+          let i = 0, p = 0;
+          i < channelData.length;
+          i += samplesPerBucket, p++
+        ) {
+          let min = 1.0,
+            max = -1.0;
+          for (
+            let j = 0;
+            j < samplesPerBucket && i + j < channelData.length;
+            j++
+          ) {
             const v = channelData[i + j];
             if (v < min) min = v;
             if (v > max) max = v;
@@ -83,7 +104,9 @@ export default function WaveformCanvas({
       }
     }
     load();
-    return () => { aborted = true; };
+    return () => {
+      aborted = true;
+    };
   }, [src]);
 
   const repaint = useCallback(() => {
@@ -113,7 +136,7 @@ export default function WaveformCanvas({
       const step = Math.max(1, Math.floor(peaks.length / width));
       for (let x = 0, i = 0; x < width; x++, i += step) {
         const amp = peaks[Math.min(i, peaks.length - 1)] ?? 0;
-        const h = Math.max(2, Math.round(amp * (heightPx * 0.9) / 2));
+        const h = Math.max(2, Math.round((amp * (heightPx * 0.9)) / 2));
         ctx.beginPath();
         ctx.moveTo(x + 0.5, mid - h);
         ctx.lineTo(x + 0.5, mid + h);
@@ -146,7 +169,9 @@ export default function WaveformCanvas({
 
     // Progress overlay
     if (audio && audio.currentTime && audio.duration) {
-      const progressX = Math.round((audio.currentTime / audio.duration) * width);
+      const progressX = Math.round(
+        (audio.currentTime / audio.duration) * width,
+      );
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, 0, progressX, heightPx);
@@ -158,7 +183,7 @@ export default function WaveformCanvas({
         const step = Math.max(1, Math.floor(peaks.length / width));
         for (let x = 0, i = 0; x < progressX; x++, i += step) {
           const amp = peaks[Math.min(i, peaks.length - 1)] ?? 0;
-          const h = Math.max(2, Math.round(amp * (heightPx * 0.9) / 2));
+          const h = Math.max(2, Math.round((amp * (heightPx * 0.9)) / 2));
           ctx.beginPath();
           ctx.moveTo(x + 0.5, mid - h);
           ctx.lineTo(x + 0.5, mid + h);
@@ -214,12 +239,15 @@ export default function WaveformCanvas({
     return () => obs.disconnect();
   }, [repaint]);
 
-  const pctToTime = useCallback((x: number) => {
-    if (!audio || !audio.duration) return 0;
-    const rect = canvasRef.current!.getBoundingClientRect();
-    const pct = Math.min(1, Math.max(0, (x - rect.left) / rect.width));
-    return pct * audio.duration;
-  }, [audio]);
+  const pctToTime = useCallback(
+    (x: number) => {
+      if (!audio || !audio.duration) return 0;
+      const rect = canvasRef.current!.getBoundingClientRect();
+      const pct = Math.min(1, Math.max(0, (x - rect.left) / rect.width));
+      return pct * audio.duration;
+    },
+    [audio],
+  );
 
   const onPointerDown: React.PointerEventHandler<HTMLCanvasElement> = (e) => {
     if (!audio) return;
@@ -260,7 +288,13 @@ export default function WaveformCanvas({
     >
       <canvas
         ref={canvasRef}
-        style={{ display: "block", width: "100%", height: "100%", touchAction: "none", cursor: "pointer" }}
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          touchAction: "none",
+          cursor: "pointer",
+        }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

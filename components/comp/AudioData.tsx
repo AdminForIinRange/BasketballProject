@@ -121,7 +121,7 @@ function WaveformCanvas({
     // progress overlay
     if (audioEl && audioEl.duration > 0) {
       const progressX = Math.round(
-        (audioEl.currentTime / audioEl.duration) * width
+        (audioEl.currentTime / audioEl.duration) * width,
       );
       ctx.save();
       ctx.beginPath();
@@ -432,7 +432,7 @@ export default function ScriptAudio() {
     if (!a) return;
     a.currentTime = Math.max(
       0,
-      Math.min(a.duration || 0, (a.currentTime || 0) + delta)
+      Math.min(a.duration || 0, (a.currentTime || 0) + delta),
     );
   };
 
@@ -506,7 +506,7 @@ export default function ScriptAudio() {
           fontSize="20px"
           mt={"50px"}
         >
-     Non-Lapping Audio - Natural flow
+          Non-Lapping Audio - Natural flow
         </Text>
       </Box>
       <Box
@@ -597,7 +597,7 @@ export default function ScriptAudio() {
           <Button bg={"orange.400"} onClick={handleGenerate} isDisabled={busy}>
             {busy ? "Generating…" : "Generate"}
           </Button>
-          <Button bg={"orange.400"}  onClick={loadSample}>
+          <Button bg={"orange.400"} onClick={loadSample}>
             Load sample
           </Button>
         </HStack>
@@ -615,15 +615,23 @@ export default function ScriptAudio() {
         p="16px"
         boxShadow="md"
       >
-        <HStack spacing={3} mb={3} >
-          <Button  bg={"orange.400"} onClick={() => seek(-5)} isDisabled={!audioUrl}>
-      <SkipBack />
+        <HStack spacing={3} mb={3}>
+          <Button
+            bg={"orange.400"}
+            onClick={() => seek(-5)}
+            isDisabled={!audioUrl}
+          >
+            <SkipBack />
           </Button>
-          <Button  bg={"orange.400"} onClick={togglePlay} isDisabled={!audioUrl}>
+          <Button bg={"orange.400"} onClick={togglePlay} isDisabled={!audioUrl}>
             {isPlaying ? "Pause" : "Play"}
           </Button>
-          <Button  bg={"orange.400"} onClick={() => seek(5)} isDisabled={!audioUrl}>
-      <SkipForward />
+          <Button
+            bg={"orange.400"}
+            onClick={() => seek(5)}
+            isDisabled={!audioUrl}
+          >
+            <SkipForward />
           </Button>
 
           <Text fontSize="14px" color="gray.600" ml="auto">
@@ -631,7 +639,7 @@ export default function ScriptAudio() {
           </Text>
 
           <Button
-          bg={"orange.400"}
+            bg={"orange.400"}
             as="a"
             href={audioUrl ?? undefined}
             download
@@ -653,7 +661,6 @@ export default function ScriptAudio() {
         {/* Hidden audio element */}
         <audio ref={audioRef} preload="auto" />
       </Box>
-
     </VStack>
   );
 }

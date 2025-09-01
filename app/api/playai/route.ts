@@ -8,10 +8,10 @@ fal.config({ credentials: process.env.FAL_KEY! });
 type VoiceDef = { voice: string };
 
 const VOICE_POOL: Record<string, VoiceDef> = {
-  PlayByPlay: { voice: "Jennifer (English (US)/American)" },
-  Color: { voice: "Furio (English (IT)/Italian)" },
+  PlayByPlay: { voice: "Dexter (English (US)/American)" },
+  Color: { voice: "Jennifer (English (IT)/Italian)" },
   Analyst: { voice: "Will (English (GB)/British)" },
-  Speaker: { voice: "Jennifer (English (US)/American)" },
+  Speaker: { voice: "Dexter (English (US)/American)" },
 };
 
 export async function POST(req: NextRequest) {

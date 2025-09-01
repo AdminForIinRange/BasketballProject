@@ -230,7 +230,6 @@ function WaveformCanvas({
       borderRadius="12px"
       overflow="hidden"
       bg="white"
-
     >
       <canvas
         ref={canvasRef}
@@ -489,7 +488,7 @@ export default function DualCommentary() {
       >
         <HStack spacing={3} mb={4}>
           <Button onClick={() => masterSeek(-5)} isDisabled={!bothReady}>
-         <SkipBack />
+            <SkipBack />
           </Button>
           <Button onClick={masterToggle} isDisabled={!bothReady}>
             {isPlaying ? "Pause Both" : "Play Both"}

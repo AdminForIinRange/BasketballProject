@@ -16,8 +16,8 @@
 
 // // Map the two speakers you want to distinct voices
 // const VOICE_MAP: Record<string, VoiceDef> = {
-//   PlayByPlay: { voice: "Jennifer (English (US)/American)", turn_prefix: "PlayByPlay: " },
-//   Color:      { voice: "Furio (English (IT)/Italian)",     turn_prefix: "Color: " },
+//   PlayByPlay: { voice: "Dexter (English (US)/American)", turn_prefix: "PlayByPlay: " },
+//   Color:      { voice: "Jennifer (English (IT)/Italian)",     turn_prefix: "Color: " },
 // };
 
 // function parseHHMMSSmmm(s?: string): number {

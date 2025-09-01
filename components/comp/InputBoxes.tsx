@@ -37,12 +37,12 @@ export default function InputBoxes({ transcript }: Props) {
         const speaker = (l.speaker || "").toLowerCase();
         if (speaker.includes("color")) {
           color.push(l);
-          cleanColorLines.push(l.text);  // Store only the text
+          cleanColorLines.push(l.text); // Store only the text
         } else if (speaker.includes("play")) {
           play.push(l);
-          cleanPlayLines.push(l.text);  // Store only the text
+          cleanPlayLines.push(l.text); // Store only the text
         } else {
-          play.push(l);  // Default route
+          play.push(l); // Default route
           cleanPlayLines.push(l.text);
         }
       }
@@ -55,7 +55,8 @@ export default function InputBoxes({ transcript }: Props) {
       setSpeaking(true);
 
       // Prepare the body for both color and play audio generation without speaker names
-      const body = (arr: string[]) => JSON.stringify({ lines: arr.map(text => ({ text })) });
+      const body = (arr: string[]) =>
+        JSON.stringify({ lines: arr.map((text) => ({ text })) });
 
       const [resColor, resPlay] = await Promise.all([
         color.length
@@ -199,7 +200,12 @@ export default function InputBoxes({ transcript }: Props) {
     >
       {sections.map((section, i) => (
         <Box key={section.title + i}>
-          <Text fontFamily="poppins" fontWeight={600} color="black" fontSize="20px">
+          <Text
+            fontFamily="poppins"
+            fontWeight={600}
+            color="black"
+            fontSize="20px"
+          >
             {section.title}
           </Text>
           {section.fields.map((label, idx) => (

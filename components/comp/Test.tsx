@@ -1,8 +1,21 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { Box, Button, HStack, Text, Textarea, VStack } from "@chakra-ui/react";
 import { WaveformCanvas } from "./WaveformCanvas";
 import { Clip, Track, Line } from "./types";
-import { fmt, parseTranscriptJSON, getDuration, stableId, toSec, roleOf } from "./utils";
+import {
+  fmt,
+  parseTranscriptJSON,
+  getDuration,
+  stableId,
+  toSec,
+  roleOf,
+} from "./utils";
 
 const AudioTimelinePage = () => {
   /* -------- UI constants -------- */
@@ -32,13 +45,19 @@ const AudioTimelinePage = () => {
 
   /* -------- derived -------- */
   const totalDuration = useMemo(() => {
-    const ends = tracks.flatMap((t) => t.clips.map((c) => c.startTime + c.duration));
+    const ends = tracks.flatMap((t) =>
+      t.clips.map((c) => c.startTime + c.duration),
+    );
     return ends.length ? Math.max(...ends) : 0;
   }, [tracks]);
 
   const linear = useMemo(
-    () => tracks.flatMap((t) => t.clips.map((c) => ({ ...c, _track: t.id }))).filter((c) => c.url).sort((a, b) => a.startTime - b.startTime),
-    [tracks]
+    () =>
+      tracks
+        .flatMap((t) => t.clips.map((c) => ({ ...c, _track: t.id })))
+        .filter((c) => c.url)
+        .sort((a, b) => a.startTime - b.startTime),
+    [tracks],
   );
 
   /* -------- helpers -------- */
@@ -49,7 +68,7 @@ const AudioTimelinePage = () => {
       const px = (duration / totalDuration) * timelineWidth;
       return Math.max(px, minWidth);
     },
-    [timelineWidth, totalDuration]
+    [timelineWidth, totalDuration],
   );
 
   const getClipLeft = useCallback(
@@ -57,7 +76,7 @@ const AudioTimelinePage = () => {
       if (totalDuration === 0) return 0;
       return (start / totalDuration) * timelineWidth;
     },
-    [timelineWidth, totalDuration]
+    [timelineWidth, totalDuration],
   );
 
   const pxToTime = useCallback(
@@ -65,20 +84,24 @@ const AudioTimelinePage = () => {
       if (totalDuration === 0) return 0;
       return (px / timelineWidth) * totalDuration;
     },
-    [timelineWidth, totalDuration]
+    [timelineWidth, totalDuration],
   );
 
   const snapNonOverlap = useCallback(
     (track: Track, clipId: string, proposedStart: number) => {
       const clip = track.clips.find((c) => c.id === clipId)!;
-      const others = track.clips.filter((c) => c.id !== clipId).sort((a, b) => a.startTime - b.startTime);
-      const prev = [...others].reverse().find((c) => c.startTime + c.duration <= proposedStart);
+      const others = track.clips
+        .filter((c) => c.id !== clipId)
+        .sort((a, b) => a.startTime - b.startTime);
+      const prev = [...others]
+        .reverse()
+        .find((c) => c.startTime + c.duration <= proposedStart);
       const next = others.find((c) => c.startTime >= proposedStart);
       const minStart = prev ? prev.startTime + prev.duration : 0;
       const maxStart = next ? next.startTime - clip.duration : Infinity;
       return Math.max(minStart, Math.min(proposedStart, maxStart));
     },
-    []
+    [],
   );
 
   /* -------- build from transcript -------- */
@@ -91,7 +114,11 @@ const AudioTimelinePage = () => {
           const res = await fetch("/api/playai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: l.text, speaker: l.speaker, time: l.time }),
+            body: JSON.stringify({
+              text: l.text,
+              speaker: l.speaker,
+              time: l.time,
+            }),
           });
           const data = await res.json();
           const url: string | null = data?.audio?.url ?? null;
@@ -110,7 +137,7 @@ const AudioTimelinePage = () => {
             url,
             lane: role === "Color" ? "B" : "A",
           };
-        })
+        }),
       );
 
       const A: Track = { id: "A", name: "Track A", clips: [] };
@@ -153,7 +180,7 @@ const AudioTimelinePage = () => {
         setPlaying(!a.paused);
       }
     },
-    [linear]
+    [linear],
   );
 
   const onEnded = useCallback(() => {
@@ -182,9 +209,6 @@ const AudioTimelinePage = () => {
     };
   }, [onEnded]);
 
-
-
-
   /* -------- drag handlers -------- */
   const onClipPointerDown =
     (track: Track, clip: Clip) => (e: React.PointerEvent<HTMLDivElement>) => {
@@ -211,10 +235,10 @@ const AudioTimelinePage = () => {
             : {
                 ...t,
                 clips: t.clips.map((c) =>
-                  c.id === clip.id ? { ...c, startTime: snapped } : c
+                  c.id === clip.id ? { ...c, startTime: snapped } : c,
                 ),
-              }
-        )
+              },
+        ),
       );
     };
 
@@ -222,7 +246,7 @@ const AudioTimelinePage = () => {
     dragInfo.current = null;
   };
 
-const renderTrack = (track: Track) => (
+  const renderTrack = (track: Track) => (
     <HStack key={track.id} align="stretch" spacing={4}>
       <Box
         minW={`${trackLabelWidth}px`}
@@ -306,11 +330,8 @@ const renderTrack = (track: Track) => (
     </HStack>
   );
 
-
-
-
   return (
- <VStack
+    <VStack
       spacing={8}
       p={8}
       align="stretch"

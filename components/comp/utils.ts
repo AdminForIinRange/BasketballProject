@@ -2,8 +2,12 @@ export const stableId = (p = "id") =>
   `${p}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36).slice(-4)}`;
 
 export const fmt = (n: number) => {
-  const m = Math.floor(n / 60).toString().padStart(2, "0");
-  const s = Math.floor(n % 60).toString().padStart(2, "0");
+  const m = Math.floor(n / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = Math.floor(n % 60)
+    .toString()
+    .padStart(2, "0");
   return `${m}:${s}`;
 };
 

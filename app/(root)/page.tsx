@@ -9,8 +9,6 @@ export default function Page() {
   return (
     <>
       <Hero />
-   
-
 
       {/* <DualCommentary /> */}
       {/* <TTSDemo /> */}

@@ -11,10 +11,10 @@ type VoiceDef = { voice: string; turn_prefix: string };
 // Default “pool” of voices you like. You can swap any of these.
 const VOICE_POOL: Record<string, VoiceDef> = {
   PlayByPlay: {
-    voice: "Jennifer (English (US)/American)",
+    voice: "Dexter (English (US)/American)",
     turn_prefix: "PlayByPlay: ",
   },
-  Color: { voice: "Furio (English (IT)/Italian)", turn_prefix: "Color: " },
+  Color: { voice: "Jennifer (English (IT)/Italian)", turn_prefix: "Color: " },
 };
 
 export async function POST(req: NextRequest) {
@@ -41,8 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Build dialog text
-const input = lines.map((l) => l.text).join("\n");
-
+    const input = lines.map((l) => l.text).join("\n");
 
     // Collect speakers (in appearance order)
     const speakersInOrder = Array.from(

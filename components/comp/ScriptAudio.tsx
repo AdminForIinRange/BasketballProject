@@ -399,7 +399,7 @@ export default function ScriptAudio() {
     if (!a) return;
     a.currentTime = Math.max(
       0,
-      Math.min(a.duration || 0, (a.currentTime || 0) + delta)
+      Math.min(a.duration || 0, (a.currentTime || 0) + delta),
     );
   };
 
@@ -507,9 +507,13 @@ export default function ScriptAudio() {
           onChange={(e) => setTranscript(e.target.value)}
         />
         <HStack mt={3} spacing={3}>
-          <Button  bg={"orange.400"}
+          <Button
+            bg={"orange.400"}
             fontFamily="poppins"
-            fontWeight={600} onClick={handleGenerate} isDisabled={busy}>
+            fontWeight={600}
+            onClick={handleGenerate}
+            isDisabled={busy}
+          >
             {busy ? "Generating…" : "Generate"}
           </Button>
           {/* <Button bg={"orange.400"}
@@ -549,11 +553,11 @@ export default function ScriptAudio() {
           >
             <SkipForward />
           </Button>
-          <Text  fontSize="14px" color="gray.600" ml="auto">
+          <Text fontSize="14px" color="gray.600" ml="auto">
             {format(time.cur)} / {format(time.dur)}
           </Text>
           <Button
-           bg={"orange.400"}
+            bg={"orange.400"}
             fontFamily="poppins"
             fontWeight={600}
             as="a"

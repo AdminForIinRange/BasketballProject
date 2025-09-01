@@ -185,7 +185,11 @@ export default function TranscriptTimeline({
                   {line.speaker}
                 </Box>
 
-                <Text flex="1" wordBreak="break-word" fontWeight={isActive ? 600 : 400}>
+                <Text
+                  flex="1"
+                  wordBreak="break-word"
+                  fontWeight={isActive ? 600 : 400}
+                >
                   {line.text}
                 </Text>
               </HStack>
