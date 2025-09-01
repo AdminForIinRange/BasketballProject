@@ -512,11 +512,11 @@ export default function ScriptAudio() {
             fontWeight={600} onClick={handleGenerate} isDisabled={busy}>
             {busy ? "Generating…" : "Generate"}
           </Button>
-          <Button bg={"orange.400"}
+          {/* <Button bg={"orange.400"}
             fontFamily="poppins"
             fontWeight={600} onClick={loadSample}>
             Load sample
-          </Button>
+          </Button> */}
         </HStack>
       </Box>
 
